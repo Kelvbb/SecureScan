@@ -11,8 +11,10 @@ httpx==0.28.1
 idna==3.11
 psycopg2-binary==2.9.11
 pydantic==2.12.5
+pydantic-settings>=2.0.0
 pydantic_core==2.41.5
 python-dotenv==1.2.2
+email-validator>=2.0.0
 python-multipart==0.0.22
 SQLAlchemy==2.0.47
 starlette==0.52.1
