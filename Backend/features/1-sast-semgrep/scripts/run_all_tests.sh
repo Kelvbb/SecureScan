@@ -17,12 +17,12 @@ NC='\033[0m' # No Color
 # Chemin du projet
 PROJECT_ROOT="/Users/djidji/Documents/Projets/IPSSI/SecureScan"
 BACKEND_DIR="$PROJECT_ROOT/backend"
-PYTHON="$PROJECT_ROOT/venv/bin/python3"
+PYTHON="$BACKEND_DIR/venv/bin/python3"
 
 echo -e "${BLUE}[SETUP]${NC} Vérifier que le venv existe..."
-if [ ! -d "$PROJECT_ROOT/venv" ]; then
+if [ ! -d "$BACKEND_DIR/venv" ]; then
     echo -e "${YELLOW}⚠ Création du venv...${NC}"
-    cd "$PROJECT_ROOT"
+    cd "$BACKEND_DIR"
     python3 -m venv venv
 fi
 
