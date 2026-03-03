@@ -4,19 +4,30 @@ import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
 from app.core.classification import compute_score, normalize_severity
+from app.config import settings
 from app.models.scan import Scan
 from app.models.user import User
 from app.models.scan_metrics import ScanMetrics
 from app.models.vulnerability import Vulnerability
 from app.models.owasp_category import OwaspCategory
 from app.schemas.scan import ScanCreate, ScanResponse, ScanList
+from app.schemas.scan_results import ScanOwaspSummaryResponse, OwaspSummaryItem
 from app.services.scan_orchestrator import ScanOrchestrator
 
 router = APIRouter()
+
+
+def _get_scan_or_404(db: Session, scan_id: UUID) -> Scan:
+    """Récupère un scan ou lève une 404."""
+    scan = db.get(Scan, scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
 
 
 def _run_scan_background(scan_id: UUID, project_path: str, db: Session):
@@ -42,16 +53,7 @@ def create_scan(payload: ScanCreate, db: Session = Depends(get_db)) -> ScanRespo
     )
     db.add(scan)
     db.commit()
-    return ScanScoreResponse(
-        scan_id=scan_id,
-        score=score_100,
-        grade=grade,
-        critical_count=critical,
-        high_count=high,
-        medium_count=medium,
-        low_count=low,
-        total_vulnerabilities=total,
-    )
+    return ScanResponse.model_validate(scan)
 
 
 @router.get("/{scan_id}/owasp-summary", response_model=ScanOwaspSummaryResponse)
