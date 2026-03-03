@@ -22,5 +22,13 @@ class Settings(BaseSettings):
     NPM_AUDIT_ENABLED: bool = True
     TRUFFLEHOG_ENABLED: bool = True
 
+    # Auth JWT (cookie HTTP-only) — SECRET_KEY doit venir de .env en prod
+    SECRET_KEY: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_COOKIE_NAME: str = "access_token"
+    JWT_EXPIRE_MINUTES: int = 60 * 24  # 24 h
+    COOKIE_SAMESITE: str = "lax"
+    COOKIE_SECURE: bool = False  # True en HTTPS
+
 
 settings = Settings()

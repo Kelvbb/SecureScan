@@ -24,3 +24,5 @@ uvicorn==0.41.0
 semgrep>=1.45.0
 pip-audit>=2.6.0
 truffleHog>=2.0.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
