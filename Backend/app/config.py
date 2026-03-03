@@ -15,8 +15,27 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DATABASE_URL: str = "postgresql://localhost/securescan"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ]
     WORKSPACE_DIR: str = "./workspace"
+    PROJECT_ROOT: str = "/tmp/securescan/projects"
+    SEMGREP_ENABLED: bool = True
+    NPM_AUDIT_ENABLED: bool = True
+    TRUFFLEHOG_ENABLED: bool = True
+
+    # Auth JWT (cookie HTTP-only) — SECRET_KEY doit venir de .env en prod
+    SECRET_KEY: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_COOKIE_NAME: str = "access_token"
+    JWT_EXPIRE_MINUTES: int = 60 * 24  # 24 h
+    COOKIE_SAMESITE: str = "lax"
+    COOKIE_SECURE: bool = False  # True en HTTPS
 
 
 settings = Settings()

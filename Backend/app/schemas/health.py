@@ -1,7 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+"""Schéma health — squelette."""
+
+from pydantic import BaseModel
 
 
 class HealthResponse(BaseModel):
-    status: str = "ok"
-
-    model_config = ConfigDict()
+    pass

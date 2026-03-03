@@ -1,9 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+"""Schéma owasp — squelette."""
+
+from pydantic import BaseModel
 
 
 class OwaspCategoryResponse(BaseModel):
-    id: str
-    name: str
-    description: str | None
-
-    model_config = ConfigDict(from_attributes=True)
+    pass
