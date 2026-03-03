@@ -8,18 +8,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import settings
 from app.db.base import Base
 
-# Import des modèles pour que create_all les connaisse
-from app.models import (  # noqa: F401
-    OwaspCategory,
-    Scan,
-    ScanMetrics,
-    SecurityTool,
-    SuggestedFix,
-    ToolExecution,
-    User,
-    Vulnerability,
-)
-
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
@@ -38,4 +26,15 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     """Crée les tables (en dev). En prod préférer les migrations."""
+    # Imports tardifs pour éviter les importations circulaires
+    from app.models import (  # noqa: F401
+        OwaspCategory,
+        Scan,
+        ScanMetrics,
+        SecurityTool,
+        SuggestedFix,
+        ToolExecution,
+        User,
+        Vulnerability,
+    )
     Base.metadata.create_all(bind=engine)
