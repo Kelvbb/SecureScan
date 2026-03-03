@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, health, owasp, scans, users, vulnerabilities
+from app.api.routes import auth, fixes, health, owasp, scans, users, vulnerabilities
 from app.config import settings
 
 
@@ -36,7 +36,7 @@ app.include_router(
     vulnerabilities.router, prefix="/api/vulnerabilities", tags=["vulnerabilities"]
 )
 app.include_router(owasp.router, prefix="/api/owasp", tags=["owasp"])
-app.include_router(fixes_router, prefix="/api", tags=["Remediation"])
+app.include_router(fixes.router, prefix="/api", tags=["Remediation"])
 
 
 @app.get("/")
