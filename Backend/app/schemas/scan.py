@@ -1,4 +1,7 @@
-"""Schémas scan — squelette."""
+"""Schémas scan."""
+
+from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -12,4 +15,9 @@ class ScanResponse(BaseModel):
 
 
 class ScanList(BaseModel):
-    pass
+    id: UUID
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
