@@ -1,10 +1,10 @@
-from fastapi import APIRouter
+"""Route health — squelette."""
 
-from app.schemas.health import HealthResponse
+from fastapi import APIRouter
 
 router = APIRouter()
 
 
-@router.get("", response_model=HealthResponse)
-def health_check() -> HealthResponse:
-    return HealthResponse()
+@router.get("")
+def health_check():
+    pass
