@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
 from app.core.classification import compute_score, normalize_severity
 from app.models.scan import Scan
+from app.models.user import User
 from app.models.scan_metrics import ScanMetrics
 from app.models.vulnerability import Vulnerability
 from app.models.owasp_category import OwaspCategory
@@ -154,6 +155,25 @@ def get_scan_owasp_summary(
     ]
     items.sort(key=lambda x: (x.owasp_category_id == "unknown", x.owasp_category_id))
     return ScanOwaspSummaryResponse(scan_id=scan_id, items=items)
+
+
+# --- Mes scans (utilisateur connecté) ---
+
+
+@router.get("/me", response_model=list[ScanList])
+def list_my_scans(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ScanList]:
+    """Liste des scans de l'utilisateur connecté."""
+    from sqlalchemy import select
+    stmt = (
+        select(Scan)
+        .where(Scan.user_id == current_user.id)
+        .order_by(Scan.created_at.desc())
+    )
+    scans = list(db.execute(stmt).scalars().all())
+    return [ScanList.model_validate(s) for s in scans]
 
 
 # --- Endpoints existants ---

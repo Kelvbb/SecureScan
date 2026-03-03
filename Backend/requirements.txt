@@ -21,6 +21,7 @@ starlette==0.52.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.41.0
+bcrypt>=4.0.0
 semgrep>=1.45.0
 pip-audit>=2.6.0
 truffleHog>=2.0.0

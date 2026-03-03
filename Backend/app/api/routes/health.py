@@ -1,4 +1,4 @@
-"""Route health — squelette."""
+"""Route health check."""
 
 from fastapi import APIRouter
 
@@ -7,4 +7,4 @@ router = APIRouter()
 
 @router.get("")
 def health_check():
-    pass
+    return {"status": "ok"}
