@@ -24,6 +24,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5174",
     ]
     WORKSPACE_DIR: str = "./workspace"
+    PROJECT_ROOT: str = "/tmp/securescan/projects"
+    SEMGREP_ENABLED: bool = True
+    NPM_AUDIT_ENABLED: bool = True
+    TRUFFLEHOG_ENABLED: bool = True
 
     # Auth JWT (cookie HTTP-only) — SECRET_KEY doit venir de .env en prod
     SECRET_KEY: str = "change-me-in-production"
