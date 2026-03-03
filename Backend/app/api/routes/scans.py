@@ -6,9 +6,13 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
-from app.config import settings
+from app.api.deps import get_db, get_current_user
+from app.core.classification import compute_score, normalize_severity
 from app.models.scan import Scan
+from app.models.user import User
+from app.models.scan_metrics import ScanMetrics
+from app.models.vulnerability import Vulnerability
+from app.models.owasp_category import OwaspCategory
 from app.schemas.scan import ScanCreate, ScanResponse, ScanList
 from app.services.scan_orchestrator import ScanOrchestrator
 
@@ -38,8 +42,72 @@ def create_scan(payload: ScanCreate, db: Session = Depends(get_db)) -> ScanRespo
     )
     db.add(scan)
     db.commit()
-    db.refresh(scan)
-    return ScanResponse.model_validate(scan)
+    return ScanScoreResponse(
+        scan_id=scan_id,
+        score=score_100,
+        grade=grade,
+        critical_count=critical,
+        high_count=high,
+        medium_count=medium,
+        low_count=low,
+        total_vulnerabilities=total,
+    )
+
+
+@router.get("/{scan_id}/owasp-summary", response_model=ScanOwaspSummaryResponse)
+def get_scan_owasp_summary(
+    scan_id: UUID, db: Session = Depends(get_db)
+) -> ScanOwaspSummaryResponse:
+    """Répartition des vulnérabilités par catégorie OWASP (A01–A10)."""
+    _get_scan_or_404(db, scan_id)
+    stmt = (
+        select(
+            Vulnerability.owasp_category_id,
+            func.count(Vulnerability.id).label("count"),
+        )
+        .where(Vulnerability.scan_id == scan_id)
+        .group_by(Vulnerability.owasp_category_id)
+    )
+    rows = db.execute(stmt).all()
+    cat_ids = [r[0] for r in rows if r[0]]
+    categories = {}
+    if cat_ids:
+        cats = db.execute(
+            select(OwaspCategory).where(OwaspCategory.id.in_(cat_ids))
+        ).scalars().all()
+        categories = {c.id: c.name for c in cats}
+    items = [
+        OwaspSummaryItem(
+            owasp_category_id=owasp_id or "unknown",
+            owasp_category_name=categories.get(owasp_id, "Non classé"),
+            count=count,
+        )
+        for owasp_id, count in rows
+    ]
+    items.sort(key=lambda x: (x.owasp_category_id == "unknown", x.owasp_category_id))
+    return ScanOwaspSummaryResponse(scan_id=scan_id, items=items)
+
+
+# --- Mes scans (utilisateur connecté) ---
+
+
+@router.get("/me", response_model=list[ScanList])
+def list_my_scans(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ScanList]:
+    """Liste des scans de l'utilisateur connecté."""
+    from sqlalchemy import select
+    stmt = (
+        select(Scan)
+        .where(Scan.user_id == current_user.id)
+        .order_by(Scan.created_at.desc())
+    )
+    scans = list(db.execute(stmt).scalars().all())
+    return [ScanList.model_validate(s) for s in scans]
+
+
+# --- Endpoints existants ---
 
 
 @router.get("/{scan_id}", response_model=ScanResponse)

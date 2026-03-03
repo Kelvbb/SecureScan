@@ -73,7 +73,7 @@ Pour les vulnérabilités les plus courantes, la plateforme propose des **correc
 | XSS | Échappement de sortie (`htmlspecialchars`, DOMPurify) |
 | Dépendances vulnérables | Versions patchées |
 | Secrets exposés | Remplacement par variables d’environnement |
-| Mots de passe en clair | Hachage (bcrypt / argon2) |
+| Mots de passe en clair | Hachage (argon2) |
 
 L’utilisateur **valide ou rejette** chaque correction proposée avant son application.
 
