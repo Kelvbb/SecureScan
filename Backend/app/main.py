@@ -1,20 +1,15 @@
-"""Point d'entrée FastAPI — SecureScan."""
-
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import health, owasp, scans, users, vulnerabilities
+from app.api.routes.fixes import router as fixes_router
 from app.config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: optionnel, ex. init_db() si pas de migrations
     yield
-    # Shutdown
-    pass
 
 
 app = FastAPI(
@@ -37,8 +32,11 @@ app.add_middleware(
 app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(scans.router, prefix="/api/scans", tags=["scans"])
-app.include_router(vulnerabilities.router, prefix="/api/vulnerabilities", tags=["vulnerabilities"])
+app.include_router(
+    vulnerabilities.router, prefix="/api/vulnerabilities", tags=["vulnerabilities"]
+)
 app.include_router(owasp.router, prefix="/api/owasp", tags=["owasp"])
+app.include_router(fixes_router, prefix="/api", tags=["Remediation"])
 
 
 @app.get("/")
