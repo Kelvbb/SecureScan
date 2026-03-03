@@ -28,8 +28,9 @@ fi
 
 echo -e "${BLUE}[SETUP]${NC} Installer les dépendances..."
 cd "$BACKEND_DIR"
-$PYTHON -m pip install -q -r requirements.txt 2>/dev/null || true
-$PYTHON -m pip install -q requests 2>/dev/null || true
+$PYTHON -m pip install --upgrade pip setuptools wheel > /dev/null 2>&1
+$PYTHON -m pip install -r requirements.txt
+$PYTHON -m pip install requests
 
 echo ""
 echo "═"
