@@ -18,5 +18,13 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     WORKSPACE_DIR: str = "./workspace"
 
+    # Auth JWT (cookie HTTP-only) — SECRET_KEY doit venir de .env en prod
+    SECRET_KEY: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_COOKIE_NAME: str = "access_token"
+    JWT_EXPIRE_MINUTES: int = 60 * 24  # 24 h
+    COOKIE_SAMESITE: str = "lax"
+    COOKIE_SECURE: bool = False  # True en HTTPS
+
 
 settings = Settings()
