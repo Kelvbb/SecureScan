@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     # Outils d'analyse
     # -----------------------------------------------------------------------
     SEMGREP_ENABLED: bool = True
+    BANDIT_ENABLED: bool = True  # SAST spécialisé pour Python
+    ESLINT_ENABLED: bool = True  # SAST pour JavaScript/TypeScript
     NPM_AUDIT_ENABLED: bool = True
     TRUFFLEHOG_ENABLED: bool = True
 

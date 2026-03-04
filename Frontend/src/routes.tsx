@@ -7,6 +7,11 @@ import {
   RegisterPage,
   RegisterConfirmPage,
   DashboardPage,
+  CreateScanPage,
+  ScanPreviewPage,
+  ScanDetailPage,
+  ScanScorePage,
+  ScanResultsPage,
 } from "./views";
 
 export const router = createBrowserRouter([
@@ -30,6 +35,46 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scans/new",
+        element: (
+          <ProtectedRoute>
+            <CreateScanPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scans/:scanId/preview",
+        element: (
+          <ProtectedRoute>
+            <ScanPreviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scans/:scanId",
+        element: (
+          <ProtectedRoute>
+            <ScanDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scans/:scanId/score",
+        element: (
+          <ProtectedRoute>
+            <ScanScorePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scans/:scanId/results",
+        element: (
+          <ProtectedRoute>
+            <ScanResultsPage />
           </ProtectedRoute>
         ),
       },

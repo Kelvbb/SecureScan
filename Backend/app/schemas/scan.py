@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ScanCreate(BaseModel):
-    user_id: UUID
     repository_url: str | None = None
     upload_path: str | None = None
     language: str | None = None

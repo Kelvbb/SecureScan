@@ -21,7 +21,9 @@ typing_extensions==4.15.0
 uvicorn==0.41.0
 bcrypt>=4.0.0
 semgrep>=1.45.0
+bandit[toml]>=1.7.0  # SAST spécialisé pour Python
 pip-audit>=2.6.0
-truffleHog>=2.0.0
+# truffleHog3>=3.0.0  # Temporairement désactivé à cause d'un conflit de dépendances avec semgrep (attrs)
+# ESLint sera installé via npm (pas via pip)
 passlib[bcrypt]>=1.7.4
 python-jose[cryptography]>=3.3.0

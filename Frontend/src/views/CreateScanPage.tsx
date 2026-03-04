@@ -24,10 +24,11 @@ export function CreateScanPage() {
 
     setLoading(true);
     try {
-      await createScan({
+      const scan = await createScan({
         repository_url: repositoryUrl.trim(),
       });
-      navigate(`/dashboard`, { replace: true });
+      // Rediriger vers la page de prévisualisation
+      navigate(`/scans/${scan.id}/preview`, { replace: true });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Impossible de créer le scan."
