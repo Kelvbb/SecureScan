@@ -146,14 +146,21 @@ Des scripts de vérification sont disponibles dans `Backend/scripts/` :
 
 ```bash
 cd Backend
-source venv/bin/activate
+source venv/bin/activate          # Linux/macOS
+# OU
+venv\Scripts\activate             # Windows
 
-python3 scripts/check_imports.py        # Vérifie les imports Python
-python3 scripts/check_database.py       # Vérifie la connexion et la structure BD
-python3 scripts/check_tools_cli.py      # Vérifie que Semgrep, TruffleHog, etc. sont installés
-python3 scripts/check_complete_scan.py  # Teste un cycle complet insert/retrieve en BD
+python scripts/check_imports.py        # Vérifie les imports Python
+python scripts/check_database.py       # Vérifie la connexion et la structure BD
+python scripts/check_tools_cli.py      # Vérifie que Semgrep, TruffleHog, etc. sont installés
+python scripts/check_complete_scan.py  # Teste un cycle complet insert/retrieve en BD
 
-bash scripts/run_all_checks.sh          # Lance toutes les vérifications d'un coup
+bash scripts/run_all_checks.sh                                            # Linux/macOS
+# OU
+bash powershell -ExecutionPolicy Bypass -File scripts\run_all_checks.ps1  # Windows
+
+# Vrais tests pytest
+pytest tests/
 ```
 
 Pour plus de détails sur les outils : [`Backend/SECURITY_TOOLS.md`](Backend/SECURITY_TOOLS.md)

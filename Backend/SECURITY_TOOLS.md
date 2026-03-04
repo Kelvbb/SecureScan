@@ -93,6 +93,9 @@ python3 scripts/check_semgrep_quick.py
 bash scripts/run_all_checks.sh
 ```
 
+> ⚠ Toujours lancer les tests via `pytest` et non `python tests/...` — 
+> `conftest.py` n'est chargé que par pytest et est indispensable pour résoudre les imports `app.*`.
+
 ### Tests CLI manuels
 
 ```bash
