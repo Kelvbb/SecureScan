@@ -11,7 +11,8 @@ from app.models.scan import Scan
 from app.models.tool_execution import ToolExecution
 from app.models.vulnerability import Vulnerability
 from app.services.semgrep_service import SemgrepService
-from app.services.pip_audit_service import PipAuditService, NpmAuditService
+from app.services.pip_audit_service import PipAuditService
+from app.services.npm_audit_service import NpmAuditService
 from app.services.trufflehog_service import TruffleHogService
 
 
