@@ -1,7 +1,6 @@
 """Routes scans — créer, récupérer, lister, lancer analyse."""
 
 import asyncio
-import io
 import logging
 import os
 import shutil
