@@ -1,3 +1,27 @@
 export { request, API_BASE } from "./client";
 export { login, logout, register, getMe, type User } from "./auth";
-export { getMyScans, type ScanItem } from "./scans";
+export { 
+  getMyScans, 
+  createScan, 
+  uploadScan,
+  getScan,
+  runScan,
+  getScanProgress,
+  getScanScore,
+  getScanResults,
+  getScanOwaspSummary,
+  getScanFiles,
+  getScanPreview,
+  type ScanItem, 
+  type ScanDetail,
+  type ScanCreatePayload,
+  type ScanProgress,
+  type TaskProgress,
+  type ScanScore,
+  type ScanResults,
+  type VulnerabilityItem,
+  type ScanOwaspSummary,
+  type OwaspSummaryItem,
+  type ScanFiles,
+  type ScanPreview,
+} from "./scans";

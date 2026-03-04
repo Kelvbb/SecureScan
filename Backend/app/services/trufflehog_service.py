@@ -76,10 +76,13 @@ class TruffleHogService:
                     "error": "TruffleHog is not installed. Install with: pip install truffleHog3",
                 }
             
+            # TruffleHog analyse récursivement tous les fichiers
+            # Pour forcer l'analyse de tous les fichiers, on peut utiliser --no-verification
             cmd = [
                 trufflehog_path,
                 "--json",
                 "--regex",  # Enable regex checks
+                "--no-verification",  # Ne pas vérifier les secrets (analyse plus rapide)
                 str(project_path_obj),
             ]
 
@@ -143,7 +146,6 @@ class TruffleHogService:
                 # Nettoyer le repo git créé temporairement
                 if needs_cleanup_git:
                     try:
-                        import shutil
                         shutil.rmtree(str(git_dir))
                     except Exception:
                         pass
@@ -177,12 +179,22 @@ class TruffleHogService:
 
         for secret in truffleHog_results.get("secrets", []):
             # TruffleHog retourne différentes structures selon le type de secret
+            # Extraire les numéros de ligne si disponibles
+            line_start = secret.get("line_number") or secret.get("line") or secret.get("lineNumber")
+            line_end = line_start  # TruffleHog retourne généralement une seule ligne
+            
+            # Extraire le chemin du fichier
+            file_path = secret.get("path") or secret.get("file_path") or secret.get("filePath")
+            
+            # Extraire le type de secret détecté
+            secret_type = secret.get("reason") or secret.get("matched_type") or secret.get("type") or "Unknown"
+            
             vuln = {
-                "title": f"Secret detected: {secret.get('reason', secret.get('matched_type', 'Unknown'))}",
-                "description": f"Found potential secret - {secret.get('reason', 'Secret detected')}",
-                "file_path": secret.get("path", secret.get("file_path", "")),
-                "line_start": None,
-                "line_end": None,
+                "title": f"Secret detected: {secret_type}",
+                "description": f"Found potential secret ({secret_type}) - {secret.get('reason', 'Secret detected')}",
+                "file_path": file_path,
+                "line_start": line_start,
+                "line_end": line_end,
                 "severity": "critical",
                 "cve_id": None,
                 "cwe_id": "CWE-798",

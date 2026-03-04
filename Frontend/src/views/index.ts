@@ -3,3 +3,8 @@ export { LoginPage } from "./LoginPage";
 export { RegisterPage } from "./RegisterPage";
 export { RegisterConfirmPage } from "./RegisterConfirmPage";
 export { DashboardPage } from "./DashboardPage";
+export { CreateScanPage } from "./CreateScanPage";
+export { ScanPreviewPage } from "./ScanPreviewPage";
+export { ScanDetailPage } from "./ScanDetailPage";
+export { ScanScorePage } from "./ScanScorePage";
+export { ScanResultsPage } from "./ScanResultsPage";
