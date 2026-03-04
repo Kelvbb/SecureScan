@@ -27,3 +27,6 @@ pip-audit>=2.6.0
 # ESLint sera installé via npm (pas via pip)
 passlib[bcrypt]>=1.7.4
 python-jose[cryptography]>=3.3.0
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0

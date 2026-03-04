@@ -2,17 +2,14 @@
 # Python
 # ========================
 venv/
-.env
 __pycache__/
 *.pyc
-.env
-A.md
-auth.md
-GUIDE_SCANS.md
 *.pyo
 *.pyd
-*.pytest_cache/
+*.egg-info/
+.pytest_cache/
 .mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -21,17 +18,33 @@ htmlcov/
 # ========================
 node_modules/
 dist/
+dist-ssr/
 build/
+*.local
 
 # ========================
-# Autres
+# Environnement
+# ========================
+.env
+.env.*
+
+# ========================
+# Uploads & fichiers temporaires
+# ========================
+uploads/
+/tmp/securescan/
+*.log
+
+# ========================
+# Éditeurs & OS
 # ========================
 .DS_Store
 Thumbs.db
-
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
-
-*.log
-
-.env.*
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

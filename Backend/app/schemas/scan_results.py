@@ -2,12 +2,13 @@
 
 from datetime import datetime
 from uuid import UUID
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class VulnerabilityResultItem(BaseModel):
     """Un finding dans GET /scans/{id}/results avec catégorie OWASP + sévérité."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     scan_id: UUID
@@ -24,9 +25,6 @@ class VulnerabilityResultItem(BaseModel):
     owasp_category_name: str | None
     status: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class ScanResultsResponse(BaseModel):

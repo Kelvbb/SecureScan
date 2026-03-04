@@ -3,10 +3,16 @@
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+import pytest
+
+# (placé en haut avant tout import applicatif)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("=" * 70)
 print("TEST OUTILS CLI - SEMGREP & TRUFFLEHOG")
