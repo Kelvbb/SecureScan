@@ -7,7 +7,7 @@ from uuid import UUID
 
 from jinja2 import Template
 from weasyprint import HTML, CSS
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.scan import Scan
 from app.models.vulnerability import Vulnerability
@@ -190,6 +190,9 @@ class ReportGenerator:
 
         vulnerabilities = db.query(Vulnerability).filter(
             Vulnerability.scan_id == scan_id
+        ).options(
+            joinedload(Vulnerability.tool_execution),
+            joinedload(Vulnerability.owasp_category)
         ).all()
 
         tool_executions = db.query(ToolExecution).filter(
@@ -212,17 +215,17 @@ class ReportGenerator:
                     "title": v.title,
                     "description": v.description,
                     "severity": v.severity,
-                    "file": v.file,
-                    "line": v.line,
-                    "owasp_category": v.owasp_category,
-                    "tool_name": v.tool_name,
-                    "remediation": v.remediation,
+                    "file": v.file_path,
+                    "line": f"{v.line_start}-{v.line_end}" if (v.line_start and v.line_end and v.line_start != v.line_end) else (v.line_start or v.line_end or None),
+                    "owasp_category": v.owasp_category.name if v.owasp_category else None,
+                    "tool_name": v.tool_execution.raw_output.get("tool", "unknown") if (v.tool_execution and v.tool_execution.raw_output and isinstance(v.tool_execution.raw_output, dict)) else "unknown",
+                    "remediation": None,  # Pas de champ dans le modèle
                 }
                 for v in vulnerabilities
             ],
             "tool_executions": [
                 {
-                    "tool_name": t.tool_name,
+                    "tool_name": t.raw_output.get("tool", "unknown") if t.raw_output and isinstance(t.raw_output, dict) else "unknown",
                     "status": t.status,
                 }
                 for t in tool_executions
@@ -279,7 +282,9 @@ class ReportGenerator:
             else:
                 stats["low"] += 1
 
-            tool = vuln.tool_name or "unknown"
+            tool = "unknown"
+            if vuln.tool_execution and vuln.tool_execution.raw_output and isinstance(vuln.tool_execution.raw_output, dict):
+                tool = vuln.tool_execution.raw_output.get("tool", "unknown")
             stats["by_tool"][tool] = stats["by_tool"].get(tool, 0) + 1
 
         # Calcul du score
