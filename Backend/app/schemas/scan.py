@@ -7,11 +7,25 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ScanCreate(BaseModel):
-    pass
+    user_id: UUID
+    repository_url: str | None = None
+    upload_path: str | None = None
+    language: str | None = None
 
 
 class ScanResponse(BaseModel):
-    pass
+    id: UUID
+    user_id: UUID
+    repository_url: str | None = None
+    upload_path: str | None = None
+    language: str | None = None
+    status: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ScanList(BaseModel):

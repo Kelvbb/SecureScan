@@ -27,6 +27,9 @@ class Scan(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    tool_executions: Mapped[list["ToolExecution"]] = relationship(
+        "ToolExecution", back_populates="scan", cascade="all, delete-orphan"
+    )
     vulnerabilities: Mapped[list["Vulnerability"]] = relationship(
         "Vulnerability", back_populates="scan", cascade="all, delete-orphan"
     )

@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -18,6 +19,9 @@ class TruffleHogService:
         """
         Lance TruffleHog et retourne les secrets détectés.
         
+        TruffleHog fonctionne mieux sur des repos git. Si le chemin ne contient
+        pas un .git, on va initialiser un repo git local temporaire.
+        
         Args:
             project_path: Chemin du projet à analyser
             
@@ -28,52 +32,126 @@ class TruffleHogService:
             return {"status": "skipped", "reason": "TruffleHog not enabled"}
 
         try:
-            # Créer un fichier temporaire pour la sortie JSON
-            output_file = Path(project_path) / ".truffleHog-output.json"
-
-            # Construire la commande TruffleHog filesystem
-            cmd = [
-                "truffleHog",
-                "filesystem",
-                str(project_path),
-                "--json",
-                f"--only-verified",
-            ]
-
-            # Exécuter TruffleHog de manière asynchrone
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
+            project_path_obj = Path(project_path)
             
-            stdout, stderr = await process.communicate()
-
-            # Parser la sortie JSON (TruffleHog retourne des résultats ligne par ligne)
-            secrets = []
-            if stdout:
+            # Initialiser un repo git temporaire si besoin
+            git_dir = project_path_obj / ".git"
+            needs_cleanup_git = False
+            
+            if not git_dir.exists():
+                # Initialiser un repo git local
                 try:
-                    for line in stdout.decode().strip().split("\n"):
-                        if line:
-                            data = json.loads(line)
-                            secrets.append(data)
-                except json.JSONDecodeError as e:
+                    subprocess.run(
+                        ["git", "init"],
+                        cwd=str(project_path_obj),
+                        capture_output=True,
+                        timeout=10,
+                    )
+                    subprocess.run(
+                        ["git", "add", "."],
+                        cwd=str(project_path_obj),
+                        capture_output=True,
+                        timeout=10,
+                    )
+                    subprocess.run(
+                        ["git", "commit", "-m", "initial", "--no-gpg-sign"],
+                        cwd=str(project_path_obj),
+                        capture_output=True,
+                        timeout=10,
+                    )
+                    needs_cleanup_git = True
+                except Exception as e:
                     return {
                         "status": "error",
-                        "error": f"Failed to parse TruffleHog output: {str(e)}",
+                        "error": f"Failed to initialize git repo: {str(e)}",
+                    }
+            
+            # Construire la commande TruffleHog
+            # TruffleHog 2.x utilise: trufflehog [options] git_url
+            # Pour un repo local, on peut passer file:// ou simplement le chemin
+            trufflehog_path = shutil.which("trufflehog")
+            if not trufflehog_path:
+                return {
+                    "status": "error",
+                    "error": "TruffleHog is not installed. Install with: pip install truffleHog3",
+                }
+            
+            cmd = [
+                trufflehog_path,
+                "--json",
+                "--regex",  # Enable regex checks
+                str(project_path_obj),
+            ]
+
+            try:
+                # Exécuter TruffleHog de manière asynchrone
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                
+                # Timeout de 60 secondes
+                try:
+                    stdout, stderr = await asyncio.wait_for(
+                        process.communicate(),
+                        timeout=60.0
+                    )
+                except asyncio.TimeoutError:
+                    process.kill()
+                    return {
+                        "status": "error",
+                        "error": "TruffleHog execution timeout (>60s)",
                     }
 
-            return {
-                "status": "success",
-                "tool": TruffleHogService.TOOL_NAME,
-                "secrets": secrets,
-                "raw_output": {"secrets": secrets},
-            }
+                # Parser la sortie JSON (TruffleHog retourne des résultats ligne par ligne)
+                secrets = []
+                if stdout:
+                    try:
+                        for line in stdout.decode().strip().split("\n"):
+                            if line.strip():
+                                try:
+                                    data = json.loads(line)
+                                    secrets.append(data)
+                                except json.JSONDecodeError:
+                                    # Certaines lignes peuvent ne pas être du JSON
+                                    pass
+                    except Exception as e:
+                        return {
+                            "status": "error",
+                            "error": f"Failed to parse TruffleHog output: {str(e)}",
+                        }
+
+                return {
+                    "status": "success",
+                    "tool": TruffleHogService.TOOL_NAME,
+                    "secrets": secrets,
+                    "raw_output": {"secrets": secrets},
+                }
+                
+            except subprocess.TimeoutExpired:
+                return {
+                    "status": "error",
+                    "error": "TruffleHog execution timeout",
+                }
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "error": f"Error running TruffleHog: {str(e)}",
+                }
+            finally:
+                # Nettoyer le repo git créé temporairement
+                if needs_cleanup_git:
+                    try:
+                        import shutil
+                        shutil.rmtree(str(git_dir))
+                    except Exception:
+                        pass
 
         except FileNotFoundError:
             return {
                 "status": "error",
-                "error": "TruffleHog is not installed",
+                "error": "TruffleHog is not installed. Install with: pip install truffleHog",
             }
         except Exception as e:
             return {
@@ -98,6 +176,38 @@ class TruffleHogService:
             return vulnerabilities
 
         for secret in truffleHog_results.get("secrets", []):
+            # TruffleHog retourne différentes structures selon le type de secret
+            # Secret pattern:
+            # {
+            #   "reason": "High Entropy String Found",
+            #   "path": "path/to/file",
+            #   "stringsFound": ["secret_value"],
+            #   "commit": "abc123...",
+            #   "printablestr": "secret_preview"
+            # }
+            # ou
+            # {
+            #   "matched_string": "API_KEY=...",
+            #   "matched_type": "Asymmetric Private Key",
+            #   ...
+            # }
+            
+            vuln = {
+                "title": f"Secret detected: {secret.get('reason', secret.get('matched_type', 'Unknown'))}",
+                "description": f"Found potential secret - {secret.get('reason', 'Secret detected')}",
+                "file_path": secret.get("path", secret.get("file_path", "")),
+                "line_start": None,
+                "line_end": None,
+                "severity": "critical",  # Les secrets sont toujours critiques
+                "cve_id": None,
+                "cwe_id": "CWE-798",  # Hardcoded credentials
+                "tool": "truffleHog",
+                "confidence": "high",
+            }
+            vulnerabilities.append(vuln)
+
+        return vulnerabilities
+
             vuln = {
                 "title": f"Secret detected: {secret.get('type', 'Unknown')}",
                 "description": f"Found credential of type {secret.get('type', 'Unknown')} in source code",
