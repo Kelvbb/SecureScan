@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DATABASE_URL: str = "postgresql://localhost/securescan"
+
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -23,19 +24,37 @@ class Settings(BaseSettings):
         "http://localhost:5174",
         "http://127.0.0.1:5174",
     ]
+
     WORKSPACE_DIR: str = "./workspace"
     PROJECT_ROOT: str = "/tmp/securescan/projects"
+
+    # -----------------------------------------------------------------------
+    # Outils d'analyse
+    # -----------------------------------------------------------------------
     SEMGREP_ENABLED: bool = True
     NPM_AUDIT_ENABLED: bool = True
     TRUFFLEHOG_ENABLED: bool = True
 
-    # Auth JWT (cookie HTTP-only) — SECRET_KEY doit venir de .env en prod
-    SECRET_KEY: str = "change-me-in-production"
+    # -----------------------------------------------------------------------
+    # Auth JWT (cookie HTTP-only)
+    # -----------------------------------------------------------------------
+    SECRET_KEY: str = "change-me-in-production"  # ← obligatoire en prod via .env
     JWT_ALGORITHM: str = "HS256"
     JWT_COOKIE_NAME: str = "access_token"
     JWT_EXPIRE_MINUTES: int = 60 * 24  # 24 h
     COOKIE_SAMESITE: str = "lax"
-    COOKIE_SECURE: bool = False  # True en HTTPS
+    COOKIE_SECURE: bool = False  # True derrière HTTPS
+
+    # -----------------------------------------------------------------------
+    # Intégration Git — credentials pour le push automatisé
+    # -----------------------------------------------------------------------
+    # Token GitHub/GitLab avec scope repo (write).
+    # Doit être défini dans .env — ne jamais committer la valeur réelle.
+    GIT_TOKEN: str = ""  # ex : ghp_xxxxxxxxxxxx
+    GIT_AUTHOR_NAME: str = "SecureScan Bot"
+    GIT_AUTHOR_EMAIL: str = "securescan@cybersafe.local"
+    # Délai max (en secondes) par commande git subprocess
+    GIT_TIMEOUT: int = 60
 
 
 settings = Settings()
