@@ -11,7 +11,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, status
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -741,10 +741,9 @@ def get_report_pdf(
         
         pdf_filename = f"securescan_report_{scan_id}.pdf"
         
-        return FileResponse(
-            io.BytesIO(pdf_bytes),
+        return Response(
+            content=pdf_bytes,
             media_type="application/pdf",
-            filename=pdf_filename,
             headers={"Content-Disposition": f"attachment; filename={pdf_filename}"}
         )
     except Exception as e:
