@@ -5,6 +5,10 @@ venv/
 .env
 __pycache__/
 *.pyc
+.env
+A.md
+auth.md
+GUIDE_SCANS.md
 *.pyo
 *.pyd
 *.pytest_cache/
