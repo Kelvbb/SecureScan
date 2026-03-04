@@ -1,5 +1,3 @@
-# tests/test_service_disk.py  — remplacer la section stubs + test entier
-
 import sys, uuid, types, tempfile, textwrap
 from pathlib import Path
 from unittest.mock import MagicMock, patch
