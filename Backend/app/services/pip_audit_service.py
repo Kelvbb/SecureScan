@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -28,6 +29,14 @@ class PipAuditService:
             return {"status": "skipped", "reason": "Pip-audit not enabled"}
 
         try:
+            # Découvrir le chemin de pip-audit
+            pip_audit_path = shutil.which("pip-audit")
+            if not pip_audit_path:
+                return {
+                    "status": "error",
+                    "error": "pip-audit is not installed. Install with: pip install pip-audit",
+                }
+            
             # Vérifier si requirements.txt existe
             requirements_file = Path(project_path) / "requirements.txt"
             if not requirements_file.exists():
@@ -38,7 +47,7 @@ class PipAuditService:
 
             # Construire la commande pip-audit
             cmd = [
-                "pip-audit",
+                pip_audit_path,
                 "--desc",
                 f"--path={requirements_file}",
                 "--format=json",
@@ -51,7 +60,18 @@ class PipAuditService:
                 stderr=asyncio.subprocess.PIPE,
             )
             
-            stdout, stderr = await process.communicate()
+            # Timeout global de 60 secondes
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=60.0
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                return {
+                    "status": "error",
+                    "error": "pip-audit execution timeout (>60s)",
+                }
 
             # Parser la sortie JSON
             try:

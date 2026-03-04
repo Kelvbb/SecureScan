@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # Outils d'analyse
     # -----------------------------------------------------------------------
     SEMGREP_ENABLED: bool = True
+    PIP_AUDIT_ENABLED: bool = True
     NPM_AUDIT_ENABLED: bool = True
     TRUFFLEHOG_ENABLED: bool = True
 

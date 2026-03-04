@@ -9,6 +9,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import pytest
+
 # (placé en haut avant tout import applicatif)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -198,6 +200,7 @@ print("\n[TEST 4] Test avec les services Python (asyncio)")
 print("-" * 70)
 
 
+@pytest.mark.asyncio
 async def test_services():
     try:
         from features._1_sast_semgrep.semgrep.semgrep_service import SemgrepService
