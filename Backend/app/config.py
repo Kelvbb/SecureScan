@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     DEBUG: bool = False
 
-    DATABASE_URL: str = "postgresql://localhost/securescan"
+    DATABASE_URL: str
 
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

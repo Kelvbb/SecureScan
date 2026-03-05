@@ -1,5 +1,3 @@
-"""Modèle SuggestedFix — squelette."""
-
 import uuid
 
 from sqlalchemy.dialects.postgresql import UUID

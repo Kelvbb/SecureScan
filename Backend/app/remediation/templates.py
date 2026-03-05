@@ -1,5 +1,5 @@
 """
-Générateurs de corrections template-based pour SecureScan.
+Générateurs de corrections template-based.
 Chaque fonction reçoit la ligne vulnérable et retourne un FixResult
 avec la ligne corrigée et une explication destinée au développeur.
 """

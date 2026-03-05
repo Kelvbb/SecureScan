@@ -1,5 +1,5 @@
 """
-Endpoints de remédiation — SecureScan.
+Endpoints de remédiation
 
 GET  /scans/{scan_id}/fixes        → liste les corrections proposées
 POST /scans/{scan_id}/fixes/apply  → applique les corrections validées + push Git
