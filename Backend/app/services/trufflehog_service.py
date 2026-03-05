@@ -18,13 +18,13 @@ class TruffleHogService:
     async def run(project_path: str) -> dict:
         """
         Lance TruffleHog et retourne les secrets détectés.
-        
+
         TruffleHog fonctionne mieux sur des repos git. Si le chemin ne contient
         pas un .git, on va initialiser un repo git local temporaire.
-        
+
         Args:
             project_path: Chemin du projet à analyser
-            
+
         Returns:
             Dict avec les résultats parsés
         """
@@ -33,11 +33,11 @@ class TruffleHogService:
 
         try:
             project_path_obj = Path(project_path)
-            
+
             # Initialiser un repo git temporaire si besoin
             git_dir = project_path_obj / ".git"
             needs_cleanup_git = False
-            
+
             if not git_dir.exists():
                 # Initialiser un repo git local
                 try:
@@ -65,7 +65,7 @@ class TruffleHogService:
                         "status": "error",
                         "error": f"Failed to initialize git repo: {str(e)}",
                     }
-            
+
             # Construire la commande TruffleHog
             # TruffleHog 2.x utilise: trufflehog [options] git_url
             # Pour un repo local, on peut passer file:// ou simplement le chemin
@@ -75,7 +75,7 @@ class TruffleHogService:
                     "status": "error",
                     "error": "TruffleHog is not installed. Install with: pip install truffleHog3",
                 }
-            
+
             # TruffleHog analyse récursivement tous les fichiers
             # Pour forcer l'analyse de tous les fichiers, on peut utiliser --no-verification
             cmd = [
@@ -93,12 +93,11 @@ class TruffleHogService:
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                
+
                 # Timeout de 60 secondes
                 try:
                     stdout, stderr = await asyncio.wait_for(
-                        process.communicate(),
-                        timeout=60.0
+                        process.communicate(), timeout=60.0
                     )
                 except asyncio.TimeoutError:
                     process.kill()
@@ -131,7 +130,7 @@ class TruffleHogService:
                     "secrets": secrets,
                     "raw_output": {"secrets": secrets},
                 }
-                
+
             except subprocess.TimeoutExpired:
                 return {
                     "status": "error",
@@ -165,10 +164,10 @@ class TruffleHogService:
     def parse_vulnerabilities(truffleHog_results: dict) -> list[dict]:
         """
         Convertit les résultats TruffleHog en format vulnérabilité standardisé.
-        
+
         Args:
             truffleHog_results: Résultats bruts de TruffleHog
-            
+
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -180,15 +179,26 @@ class TruffleHogService:
         for secret in truffleHog_results.get("secrets", []):
             # TruffleHog retourne différentes structures selon le type de secret
             # Extraire les numéros de ligne si disponibles
-            line_start = secret.get("line_number") or secret.get("line") or secret.get("lineNumber")
+            line_start = (
+                secret.get("line_number")
+                or secret.get("line")
+                or secret.get("lineNumber")
+            )
             line_end = line_start  # TruffleHog retourne généralement une seule ligne
-            
+
             # Extraire le chemin du fichier
-            file_path = secret.get("path") or secret.get("file_path") or secret.get("filePath")
-            
+            file_path = (
+                secret.get("path") or secret.get("file_path") or secret.get("filePath")
+            )
+
             # Extraire le type de secret détecté
-            secret_type = secret.get("reason") or secret.get("matched_type") or secret.get("type") or "Unknown"
-            
+            secret_type = (
+                secret.get("reason")
+                or secret.get("matched_type")
+                or secret.get("type")
+                or "Unknown"
+            )
+
             vuln = {
                 "title": f"Secret detected: {secret_type}",
                 "description": f"Found potential secret ({secret_type}) - {secret.get('reason', 'Secret detected')}",
@@ -204,4 +214,3 @@ class TruffleHogService:
             vulnerabilities.append(vuln)
 
         return vulnerabilities
-

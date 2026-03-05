@@ -48,7 +48,7 @@ interface ApplyFixesResponse {
 
 async function getFixProposals(scanId: string): Promise<FixesListResponse> {
   const token = localStorage.getItem("access_token");
-  const res = await fetch(`/api/scans/${scanId}/fixes`, {
+  const res = await fetch(`http://localhost:8000/api/scans/${scanId}/fixes`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok)

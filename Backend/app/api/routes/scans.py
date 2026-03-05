@@ -9,7 +9,15 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    UploadFile,
+    File,
+    status,
+)
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -51,8 +59,9 @@ def _run_scan_background(scan_id: UUID, project_path: str):
     # Créer une nouvelle session de base de données pour le thread background
     # La session passée en paramètre peut être fermée quand le thread s'exécute
     from app.db.session import SessionLocal
+
     db = SessionLocal()
-    
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -60,18 +69,28 @@ def _run_scan_background(scan_id: UUID, project_path: str):
         result = loop.run_until_complete(
             ScanOrchestrator(db).run_scan(scan_id, project_path)
         )
-        logger.info(f"Scan {scan_id} terminé: {result.get('vulnerabilities_count', 0)} vulnérabilités")
-        
+        logger.info(
+            f"Scan {scan_id} terminé: {result.get('vulnerabilities_count', 0)} vulnérabilités"
+        )
+
         # Vérification finale en base
         from app.models.vulnerability import Vulnerability
-        final_count = db.query(Vulnerability).filter(Vulnerability.scan_id == scan_id).count()
-        logger.info(f"Vérification finale: {final_count} vulnérabilités en base pour le scan {scan_id}")
-        
+
+        final_count = (
+            db.query(Vulnerability).filter(Vulnerability.scan_id == scan_id).count()
+        )
+        logger.info(
+            f"Vérification finale: {final_count} vulnérabilités en base pour le scan {scan_id}"
+        )
+
         if final_count == 0:
-            logger.warning(f"ATTENTION: Aucune vulnérabilité en base après la fin du scan {scan_id}")
+            logger.warning(
+                f"ATTENTION: Aucune vulnérabilité en base après la fin du scan {scan_id}"
+            )
     except Exception as e:
         logger.error(f"Erreur lors de l'exécution du scan {scan_id}: {e}")
         import traceback
+
         logger.error(traceback.format_exc())
         # Marquer le scan comme erreur
         try:
@@ -87,13 +106,16 @@ def _run_scan_background(scan_id: UUID, project_path: str):
     finally:
         # Attendre un peu avant de fermer pour s'assurer que tout est commité
         import time
+
         time.sleep(1)
         db.close()
         loop.close()
         logger.info(f"Session DB fermée pour le scan {scan_id}")
 
 
-@router.post("/upload", response_model=ScanResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload", response_model=ScanResponse, status_code=status.HTTP_201_CREATED
+)
 def upload_scan(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -104,12 +126,11 @@ def upload_scan(
     Le fichier est décompressé dans un dossier dédié au scan.
     """
     # Vérifier que c'est un fichier ZIP
-    if not file.filename or not file.filename.endswith(('.zip', '.ZIP')):
+    if not file.filename or not file.filename.endswith((".zip", ".ZIP")):
         raise HTTPException(
-            status_code=400,
-            detail="Le fichier doit être une archive ZIP (.zip)"
+            status_code=400, detail="Le fichier doit être une archive ZIP (.zip)"
         )
-    
+
     # Créer le scan d'abord pour avoir un ID
     scan = Scan(
         user_id=current_user.id,
@@ -120,41 +141,40 @@ def upload_scan(
     db.add(scan)
     db.commit()
     db.refresh(scan)
-    
+
     # Créer le dossier de destination
     workspace_dir = Path(settings.PROJECT_ROOT)
     workspace_dir.mkdir(parents=True, exist_ok=True)
     scan_dir = workspace_dir / str(scan.id)
     scan_dir.mkdir(parents=True, exist_ok=True)
-    
+
     try:
         # Sauvegarder le fichier ZIP temporairement
         zip_path = scan_dir / file.filename
         with open(zip_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         # Décompresser le ZIP
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(scan_dir)
-        
+
         # Supprimer le fichier ZIP après extraction
         zip_path.unlink()
-        
+
         # Mettre à jour le scan avec le chemin
         scan.upload_path = str(scan_dir)
         db.commit()
         db.refresh(scan)
-        
+
         return ScanResponse.model_validate(scan)
-    
+
     except zipfile.BadZipFile:
         # Nettoyer en cas d'erreur
         shutil.rmtree(scan_dir, ignore_errors=True)
         db.delete(scan)
         db.commit()
         raise HTTPException(
-            status_code=400,
-            detail="Le fichier ZIP est corrompu ou invalide"
+            status_code=400, detail="Le fichier ZIP est corrompu ou invalide"
         )
     except Exception as e:
         # Nettoyer en cas d'erreur
@@ -163,14 +183,13 @@ def upload_scan(
         db.delete(scan)
         db.commit()
         raise HTTPException(
-            status_code=500,
-            detail=f"Erreur lors du traitement du fichier : {str(e)}"
+            status_code=500, detail=f"Erreur lors du traitement du fichier : {str(e)}"
         )
 
 
 @router.post("", response_model=ScanResponse, status_code=status.HTTP_201_CREATED)
 def create_scan(
-    payload: ScanCreate, 
+    payload: ScanCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ScanResponse:
@@ -188,22 +207,24 @@ def create_scan(
     db.add(scan)
     db.commit()
     db.refresh(scan)
-    
+
     # Si une URL Git est fournie, cloner le dépôt immédiatement
     if payload.repository_url:
         project_path = f"{settings.PROJECT_ROOT}/{scan.id}"
         project_root = Path(settings.PROJECT_ROOT)
         project_root.mkdir(parents=True, exist_ok=True)
         project_path_obj = Path(project_path)
-        
+
         # Supprimer le dossier s'il existe déjà
         if project_path_obj.exists():
             shutil.rmtree(project_path_obj)
-        
+
         try:
-            logger.info(f"Clonage du dépôt {payload.repository_url} vers {project_path}")
+            logger.info(
+                f"Clonage du dépôt {payload.repository_url} vers {project_path}"
+            )
             from app.git.clone import clone_repository_with_auth
-            
+
             git_token = settings.GIT_TOKEN if settings.GIT_TOKEN else None
             clone_repository_with_auth(
                 repo_url=payload.repository_url,
@@ -216,7 +237,7 @@ def create_scan(
             logger.error(f"Erreur lors du clonage du dépôt: {e}")
             # Ne pas lever d'exception, le scan reste en "pending"
             # L'utilisateur pourra voir l'erreur dans la prévisualisation
-    
+
     return ScanResponse.model_validate(scan)
 
 
@@ -230,18 +251,18 @@ def get_scan_preview(
     Retourne une prévisualisation du projet : technologies détectées et fichiers à analyser.
     """
     scan = _get_scan_or_404(db, scan_id)
-    
+
     # Vérifier que l'utilisateur est propriétaire
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
+
     # Déterminer le chemin du projet
     project_path = None
     if scan.upload_path:
         project_path = scan.upload_path
     elif scan.repository_url:
         project_path = f"{settings.PROJECT_ROOT}/{scan_id}"
-    
+
     if not project_path or not Path(project_path).exists():
         return {
             "scan_id": str(scan_id),
@@ -263,18 +284,19 @@ def get_scan_preview(
             "total_files": 0,
             "semgrep_configs": [],
         }
-    
+
     # Détecter les technologies
     technologies = TechnologyDetector.detect(project_path)
-    
+
     # Déterminer les outils à utiliser
     tools_to_run = TechnologyDetector.get_tools_to_run(technologies)
-    
+
     # Lister les fichiers à analyser
     from app.services.scan_orchestrator import ScanOrchestrator
+
     orchestrator = ScanOrchestrator(db)
     all_files = orchestrator._list_all_code_files(project_path)
-    
+
     # Organiser les fichiers par type
     files_by_type = {
         "python": [],
@@ -288,7 +310,7 @@ def get_scan_preview(
         "csharp": [],
         "other": [],
     }
-    
+
     for file_path in sorted(all_files):
         file_ext = Path(file_path).suffix.lower()
         if file_ext in [".py"]:
@@ -311,10 +333,10 @@ def get_scan_preview(
             files_by_type["csharp"].append(file_path)
         else:
             files_by_type["other"].append(file_path)
-    
+
     # Filtrer les types vides
     files_by_type = {k: v for k, v in files_by_type.items() if v}
-    
+
     return {
         "scan_id": str(scan_id),
         "status": "ready",
@@ -336,8 +358,9 @@ def get_scan_results(
     scan = _get_scan_or_404(db, scan_id)
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    
+
     from sqlalchemy.orm import joinedload
+
     stmt = (
         select(Vulnerability)
         .where(Vulnerability.scan_id == scan_id)
@@ -378,11 +401,11 @@ def get_scan_score(
     scan = _get_scan_or_404(db, scan_id)
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    
+
     vulns = list(
-        db.execute(
-            select(Vulnerability).where(Vulnerability.scan_id == scan_id)
-        ).scalars().all()
+        db.execute(select(Vulnerability).where(Vulnerability.scan_id == scan_id))
+        .scalars()
+        .all()
     )
     critical = high = medium = low = 0
     for v in vulns:
@@ -441,50 +464,64 @@ def get_scan_files(
     scan = _get_scan_or_404(db, scan_id)
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    
+
     # Récupérer les exécutions d'outils
     tool_executions = list(
-        db.execute(
-            select(ToolExecution).where(ToolExecution.scan_id == scan_id)
-        ).scalars().all()
+        db.execute(select(ToolExecution).where(ToolExecution.scan_id == scan_id))
+        .scalars()
+        .all()
     )
-    
+
     # Extraire les fichiers analysés par outil
     files_by_tool = {}
     all_files = set()
-    
+
     # Déterminer le chemin du projet pour lister tous les fichiers si nécessaire
     project_path = None
     if scan.upload_path:
         project_path = scan.upload_path
     elif scan.repository_url:
         project_path = f"{settings.PROJECT_ROOT}/{scan_id}"
-    
+
     for exec in tool_executions:
         if exec.raw_output and isinstance(exec.raw_output, dict):
             # Essayer plusieurs façons d'identifier l'outil
             tool_name = (
-                exec.raw_output.get("tool") or 
-                exec.raw_output.get("tool_name") or
+                exec.raw_output.get("tool")
+                or exec.raw_output.get("tool_name")
+                or
                 # Essayer de deviner depuis le type de données
-                ("semgrep" if "results" in exec.raw_output else None) or
-                ("truffleHog" if "secrets" in exec.raw_output else None) or
-                ("pip-audit" if "vulnerabilities" in exec.raw_output and "pip" in str(exec.raw_output).lower() else None) or
-                ("npm-audit" if "vulnerabilities" in exec.raw_output and "npm" in str(exec.raw_output).lower() else None) or
-                "unknown"
+                ("semgrep" if "results" in exec.raw_output else None)
+                or ("truffleHog" if "secrets" in exec.raw_output else None)
+                or (
+                    "pip-audit"
+                    if "vulnerabilities" in exec.raw_output
+                    and "pip" in str(exec.raw_output).lower()
+                    else None
+                )
+                or (
+                    "npm-audit"
+                    if "vulnerabilities" in exec.raw_output
+                    and "npm" in str(exec.raw_output).lower()
+                    else None
+                )
+                or "unknown"
             )
-            
+
             analyzed_files = exec.raw_output.get("analyzed_files", [])
-            
+
             # Si aucun fichier n'est trouvé dans raw_output, essayer de les extraire
             if not analyzed_files and project_path:
                 from app.services.scan_orchestrator import ScanOrchestrator
+
                 orchestrator = ScanOrchestrator(db)
-                analyzed_files = orchestrator._extract_analyzed_files(tool_name, exec.raw_output, project_path)
+                analyzed_files = orchestrator._extract_analyzed_files(
+                    tool_name, exec.raw_output, project_path
+                )
                 # Mettre à jour raw_output avec les fichiers extraits
                 exec.raw_output["analyzed_files"] = analyzed_files
                 db.commit()
-            
+
             if analyzed_files:
                 files_by_tool[tool_name] = {
                     "files": analyzed_files,
@@ -492,13 +529,15 @@ def get_scan_files(
                     "status": exec.status,
                 }
                 all_files.update(analyzed_files)
-    
+
     # Si aucun fichier n'est trouvé, essayer de lister tous les fichiers du projet
     if not all_files and project_path:
         from pathlib import Path
+
         project_path_obj = Path(project_path)
         if project_path_obj.exists():
             from app.services.scan_orchestrator import ScanOrchestrator
+
             orchestrator = ScanOrchestrator(db)
             all_project_files = orchestrator._list_all_code_files(project_path)
             if all_project_files:
@@ -513,7 +552,7 @@ def get_scan_files(
                 logger.warning(f"Aucun fichier trouvé dans {project_path}")
         else:
             logger.warning(f"Le chemin du projet n'existe pas: {project_path}")
-    
+
     return {
         "scan_id": str(scan_id),
         "total_files": len(all_files),
@@ -524,7 +563,7 @@ def get_scan_files(
 
 @router.get("/{scan_id}/owasp-summary", response_model=ScanOwaspSummaryResponse)
 def get_scan_owasp_summary(
-    scan_id: UUID, 
+    scan_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ScanOwaspSummaryResponse:
@@ -532,7 +571,7 @@ def get_scan_owasp_summary(
     scan = _get_scan_or_404(db, scan_id)
     if scan.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    
+
     stmt = (
         select(
             Vulnerability.owasp_category_id,
@@ -545,9 +584,11 @@ def get_scan_owasp_summary(
     cat_ids = [r[0] for r in rows if r[0]]
     categories = {}
     if cat_ids:
-        cats = db.execute(
-            select(OwaspCategory).where(OwaspCategory.id.in_(cat_ids))
-        ).scalars().all()
+        cats = (
+            db.execute(select(OwaspCategory).where(OwaspCategory.id.in_(cat_ids)))
+            .scalars()
+            .all()
+        )
         categories = {c.id: c.name for c in cats}
     items = [
         OwaspSummaryItem(
@@ -571,6 +612,7 @@ def list_my_scans(
 ) -> list[ScanList]:
     """Liste des scans de l'utilisateur connecté."""
     from sqlalchemy import select
+
     stmt = (
         select(Scan)
         .where(Scan.user_id == current_user.id)
@@ -605,7 +647,9 @@ def list_scans(
     return [ScanList.model_validate(s) for s in scans]
 
 
-@router.post("/{scan_id}/run", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{scan_id}/run", response_model=dict, status_code=status.HTTP_202_ACCEPTED
+)
 def run_scan(
     scan_id: UUID,
     background_tasks: BackgroundTasks,
@@ -613,7 +657,7 @@ def run_scan(
 ) -> dict:
     """
     Lance l'analyse de sécurité complète pour un scan.
-    
+
     Exécute tous les outils (Semgrep, pip-audit, npm-audit, TruffleHog) en parallèle.
     Retourne immédiatement avec le statut "running", l'analyse continue en background.
     """
@@ -632,18 +676,18 @@ def run_scan(
         project_path = scan.upload_path
     elif scan.repository_url:
         project_path = f"{settings.PROJECT_ROOT}/{scan_id}"
-        
+
         # S'assurer que le dossier PROJECT_ROOT existe
         project_root = Path(settings.PROJECT_ROOT)
         project_root.mkdir(parents=True, exist_ok=True)
-        
+
         # Cloner le dépôt Git si nécessaire
         project_path_obj = Path(project_path)
         if not project_path_obj.exists() or not any(project_path_obj.iterdir()):
             logger.info(f"Clonage du dépôt {scan.repository_url} vers {project_path}")
             try:
                 from app.git.clone import clone_repository_with_auth
-                
+
                 # Cloner avec authentification si un token est disponible
                 git_token = settings.GIT_TOKEN if settings.GIT_TOKEN else None
                 clone_repository_with_auth(
@@ -656,8 +700,7 @@ def run_scan(
             except Exception as e:
                 logger.error(f"Erreur lors du clonage du dépôt: {e}")
                 raise HTTPException(
-                    status_code=500,
-                    detail=f"Erreur lors du clonage du dépôt: {str(e)}"
+                    status_code=500, detail=f"Erreur lors du clonage du dépôt: {str(e)}"
                 )
     else:
         raise HTTPException(
@@ -669,8 +712,7 @@ def run_scan(
     project_path_obj = Path(project_path)
     if not project_path_obj.exists():
         raise HTTPException(
-            status_code=404,
-            detail=f"Le chemin du projet n'existe pas: {project_path}"
+            status_code=404, detail=f"Le chemin du projet n'existe pas: {project_path}"
         )
 
     # Lancer l'orchestrateur en background

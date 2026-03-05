@@ -18,9 +18,7 @@ def _run_scan_background(scan_id: UUID, project_path: str, db: Session):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(
-            ScanOrchestrator(db).run_scan(scan_id, project_path)
-        )
+        loop.run_until_complete(ScanOrchestrator(db).run_scan(scan_id, project_path))
     finally:
         loop.close()
 
@@ -59,7 +57,9 @@ def list_scans(
     return [ScanList.model_validate(s) for s in scans]
 
 
-@router.post("/{scan_id}/run", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{scan_id}/run", response_model=dict, status_code=status.HTTP_202_ACCEPTED
+)
 def run_scan(
     scan_id: UUID,
     background_tasks: BackgroundTasks,
@@ -67,7 +67,7 @@ def run_scan(
 ) -> dict:
     """
     Lance l'analyse de sécurité complète pour un scan.
-    
+
     Exécute tous les outils (Semgrep, pip-audit, npm-audit, TruffleHog) en parallèle.
     Retourne immédiatement avec le statut "running", l'analyse continue en background.
     """

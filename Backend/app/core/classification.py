@@ -46,8 +46,8 @@ def map_severity_to_owasp_default(severity: SeverityLevel) -> str:
     mapping: dict[SeverityLevel, str] = {
         "critical": "A05",  # Injection / critique
         "high": "A05",
-        "medium": "A02",    # Misconfiguration
-        "low": "A09",       # Logging
+        "medium": "A02",  # Misconfiguration
+        "low": "A09",  # Logging
     }
     return mapping.get(severity, "A06")  # A06 Insecure Design par défaut
 

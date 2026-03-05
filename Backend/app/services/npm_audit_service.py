@@ -18,13 +18,13 @@ class NpmAuditService:
     async def run(project_path: str) -> dict:
         """
         Lance npm audit et retourne les vulnérabilités détectées.
-        
-        npm audit analyse les dépendances Node.js (package.json) pour 
+
+        npm audit analyse les dépendances Node.js (package.json) pour
         détecter les vulnérabilités connues.
-        
+
         Args:
             project_path: Chemin du projet à analyser
-            
+
         Returns:
             Dict avec les résultats parsés
         """
@@ -64,12 +64,11 @@ class NpmAuditService:
                     stderr=asyncio.subprocess.PIPE,
                     cwd=str(project_path),  # Exécute dans le répertoire du projet
                 )
-                
+
                 # Timeout global de 120 secondes (npm peut être plus lent)
                 try:
                     stdout, stderr = await asyncio.wait_for(
-                        process.communicate(),
-                        timeout=120.0
+                        process.communicate(), timeout=120.0
                     )
                 except asyncio.TimeoutError:
                     process.kill()
@@ -120,10 +119,10 @@ class NpmAuditService:
     def parse_vulnerabilities(npm_audit_results: dict) -> list[dict]:
         """
         Convertit les résultats npm audit en format vulnérabilité standardisé.
-        
+
         Args:
             npm_audit_results: Résultats bruts de npm audit
-            
+
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -133,13 +132,17 @@ class NpmAuditService:
             return vulnerabilities
 
         npm_vulns = npm_audit_results.get("results", {})
-        
+
         for package_name, vuln_data in npm_vulns.items():
             if isinstance(vuln_data, dict):
                 vuln = {
                     "package": package_name,
-                    "severity": vuln_data.get("via", [{}])[0].get("severity", "unknown"),
-                    "title": vuln_data.get("via", [{}])[0].get("title", "Unknown vulnerability"),
+                    "severity": vuln_data.get("via", [{}])[0].get(
+                        "severity", "unknown"
+                    ),
+                    "title": vuln_data.get("via", [{}])[0].get(
+                        "title", "Unknown vulnerability"
+                    ),
                     "description": vuln_data.get("via", [{}])[0].get("url", ""),
                     "cve": vuln_data.get("via", [{}])[0].get("cves", []),
                     "affected_versions": vuln_data.get("affected", ""),
