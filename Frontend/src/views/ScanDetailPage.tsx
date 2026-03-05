@@ -367,6 +367,21 @@ export function ScanDetailPage() {
         </section>
       )}
 
+      {/* Actions - Boutons pour voir les résultats et le score */}
+      {isCompleted && (
+        <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+          <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Résultats de l'analyse</h2>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            <Link to={`/scans/${scanId}/results`}>
+              <Button style={{ minWidth: "200px" }}>Voir les résultats</Button>
+            </Link>
+            <Link to={`/scans/${scanId}/score`}>
+              <Button className="btn-secondary" style={{ minWidth: "200px" }}>Voir le score</Button>
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* Section fichiers analysés (toujours visible si des fichiers sont disponibles) */}
       {files && files.total_files > 0 ? (
         <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
@@ -475,36 +490,28 @@ export function ScanDetailPage() {
         )
       )}
 
-      {/* Actions */}
-      <section style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-        {isPending && (
-          <Button 
-            onClick={handleRunScan} 
-            disabled={startingScan || scan?.status === "running"}
-          >
-            {startingScan 
-              ? "Démarrage…" 
-              : scan?.status === "running"
-              ? "Analyse en cours…"
-              : "Lancer l'analyse"}
-          </Button>
-        )}
-        {isRunning && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)" }}>
-            <span>Analyse en cours…</span>
-          </div>
-        )}
-        {isCompleted && (
-          <>
-            <Link to={`/scans/${scanId}/results`}>
-              <Button>Voir les résultats</Button>
-            </Link>
-            <Link to={`/scans/${scanId}/score`}>
-              <Button className="btn-secondary">Voir le score</Button>
-            </Link>
-          </>
-        )}
-      </section>
+      {/* Actions pour scan en attente ou en cours */}
+      {(isPending || isRunning) && (
+        <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+          {isPending && (
+            <Button 
+              onClick={handleRunScan} 
+              disabled={startingScan || scan?.status === "running"}
+            >
+              {startingScan 
+                ? "Démarrage…" 
+                : scan?.status === "running"
+                ? "Analyse en cours…"
+                : "Lancer l'analyse"}
+            </Button>
+          )}
+          {isRunning && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-muted)" }}>
+              <span>Analyse en cours…</span>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
