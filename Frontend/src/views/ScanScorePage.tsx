@@ -94,11 +94,16 @@ export function ScanScorePage() {
 
   return (
     <div className="page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <h1>Score de sécurité</h1>
-        <Button className="btn-secondary" onClick={() => navigate(`/scans/${scanId}`)}>
-          Retour
-        </Button>
+      <div style={{ marginBottom: "2rem" }}>
+        <h1 style={{ marginBottom: "1rem" }}>Score de sécurité</h1>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <Button onClick={() => navigate(`/scans/${scanId}/results`)}>
+            Voir toutes les vulnérabilités
+          </Button>
+          <Button className="btn-secondary" onClick={() => navigate(`/scans/${scanId}`)}>
+            Retour
+          </Button>
+        </div>
       </div>
 
       {/* Score principal */}

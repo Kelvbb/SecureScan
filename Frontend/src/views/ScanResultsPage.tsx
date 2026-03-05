@@ -129,17 +129,22 @@ export function ScanResultsPage() {
 
   return (
     <div className="page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <div>
+      <div style={{ marginBottom: "2rem" }}>
+        <div style={{ marginBottom: "1rem" }}>
           <h1>Vulnérabilités détectées</h1>
           <p className="text-muted">
             {results.total} vulnérabilité{results.total > 1 ? "s" : ""} au total
             {filteredVulns.length !== results.total && ` (${filteredVulns.length} affichée${filteredVulns.length > 1 ? "s" : ""})`}
           </p>
         </div>
-        <Button className="btn-secondary" onClick={() => navigate(`/scans/${scanId}`)}>
-          Retour
-        </Button>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <Button onClick={() => navigate(`/scans/${scanId}/score`)}>
+            Voir le score
+          </Button>
+          <Button className="btn-secondary" onClick={() => navigate(`/scans/${scanId}`)}>
+            Retour
+          </Button>
+        </div>
       </div>
 
       {/* Filtres */}
