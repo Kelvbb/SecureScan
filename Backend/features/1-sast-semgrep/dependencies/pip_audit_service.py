@@ -17,10 +17,10 @@ class PipAuditService:
     async def run(project_path: str) -> dict:
         """
         Lance pip-audit et retourne les résultats parsés.
-
+        
         Args:
             project_path: Chemin du projet à analyser
-
+            
         Returns:
             Dict avec les résultats parsés
         """
@@ -50,7 +50,7 @@ class PipAuditService:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-
+            
             stdout, stderr = await process.communicate()
 
             # Parser la sortie JSON
@@ -88,10 +88,10 @@ class PipAuditService:
     def parse_vulnerabilities(pip_audit_results: dict) -> list[dict]:
         """
         Convertit les résultats pip-audit en format vulnérabilité standardisé.
-
+        
         Args:
             pip_audit_results: Résultats bruts de pip-audit
-
+            
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -130,10 +130,10 @@ class NpmAuditService:
     async def run(project_path: str) -> dict:
         """
         Lance npm audit et retourne les résultats parsés.
-
+        
         Args:
             project_path: Chemin du projet à analyser
-
+            
         Returns:
             Dict avec les résultats parsés
         """
@@ -164,7 +164,7 @@ class NpmAuditService:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-
+            
             stdout, stderr = await process.communicate()
 
             # Parser la sortie JSON
@@ -199,20 +199,16 @@ class NpmAuditService:
         """Extrait les vulnérabilités du format npm audit."""
         vulnerabilities = []
 
-        for package_name, package_data in npm_audit_data.get(
-            "vulnerabilities", {}
-        ).items():
+        for package_name, package_data in npm_audit_data.get("vulnerabilities", {}).items():
             if isinstance(package_data, dict) and "vulnerabilities" in package_data:
                 for vuln_id, vuln_data in package_data["vulnerabilities"].items():
-                    vulnerabilities.append(
-                        {
-                            "id": vuln_id,
-                            "package": package_name,
-                            "severity": vuln_data.get("severity", "unknown"),
-                            "title": vuln_data.get("title", ""),
-                            "description": vuln_data.get("description", ""),
-                        }
-                    )
+                    vulnerabilities.append({
+                        "id": vuln_id,
+                        "package": package_name,
+                        "severity": vuln_data.get("severity", "unknown"),
+                        "title": vuln_data.get("title", ""),
+                        "description": vuln_data.get("description", ""),
+                    })
 
         return vulnerabilities
 
@@ -220,10 +216,10 @@ class NpmAuditService:
     def parse_vulnerabilities(npm_audit_results: dict) -> list[dict]:
         """
         Convertit les résultats npm audit en format vulnérabilité standardisé.
-
+        
         Args:
             npm_audit_results: Résultats bruts de npm audit
-
+            
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -239,9 +235,7 @@ class NpmAuditService:
                 "file_path": "package.json",
                 "line_start": None,
                 "line_end": None,
-                "severity": NpmAuditService._map_severity(
-                    vuln.get("severity", "unknown")
-                ),
+                "severity": NpmAuditService._map_severity(vuln.get("severity", "unknown")),
                 "cve_id": None,
                 "cwe_id": None,
                 "tool": "npm-audit",

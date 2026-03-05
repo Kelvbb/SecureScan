@@ -12,7 +12,6 @@ import {
   ScanDetailPage,
   ScanScorePage,
   ScanResultsPage,
-  ScanFixesPage,
 } from "./views";
 
 export const router = createBrowserRouter([
@@ -76,14 +75,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ScanResultsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "scans/:scanId/fixes",
-        element: (
-          <ProtectedRoute>
-            <ScanFixesPage />
           </ProtectedRoute>
         ),
       },

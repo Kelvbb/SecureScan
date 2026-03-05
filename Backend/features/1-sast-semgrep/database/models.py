@@ -66,9 +66,7 @@ class Vulnerability(Base):
         UUID(as_uuid=True), ForeignKey("scans.id", ondelete="CASCADE"), nullable=False
     )
     tool_execution_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("tool_executions.id", ondelete="SET NULL"),
-        nullable=True,
+        UUID(as_uuid=True), ForeignKey("tool_executions.id", ondelete="SET NULL"), nullable=True
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

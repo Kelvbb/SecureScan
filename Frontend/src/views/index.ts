@@ -8,4 +8,3 @@ export { ScanPreviewPage } from "./ScanPreviewPage";
 export { ScanDetailPage } from "./ScanDetailPage";
 export { ScanScorePage } from "./ScanScorePage";
 export { ScanResultsPage } from "./ScanResultsPage";
-export { ScanFixesPage } from "./ScanFixesPage";

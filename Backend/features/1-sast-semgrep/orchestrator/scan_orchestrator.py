@@ -21,7 +21,7 @@ class ScanOrchestrator:
     def __init__(self, db: Session):
         """
         Initialise l'orchestrateur.
-
+        
         Args:
             db: Sesion SQLAlchemy
         """
@@ -36,11 +36,11 @@ class ScanOrchestrator:
     async def run_scan(self, scan_id: UUID, project_path: str) -> dict:
         """
         Lance tous les outils de sécurité en parallèle.
-
+        
         Args:
             scan_id: ID du scan
             project_path: Chemin du projet à analyser
-
+            
         Returns:
             Dict avec les résultats agrégés
         """
@@ -134,13 +134,13 @@ class ScanOrchestrator:
     ) -> dict:
         """
         Lance un outil de sécurité.
-
+        
         Args:
             tool_name: Nom de l'outil
             service: Service de l'outil
             scan_id: ID du scan
             project_path: Chemin du projet
-
+            
         Returns:
             Résultats du tool
         """
@@ -156,11 +156,11 @@ class ScanOrchestrator:
     def _parse_vulnerabilities(self, tool_name: str, result: dict) -> list[dict]:
         """
         Parse les vulnérabilités à partir des résultats d'un outil.
-
+        
         Args:
             tool_name: Nom de l'outil
             result: Résultats bruts de l'outil
-
+            
         Returns:
             Liste des vulnérabilités parsées
         """

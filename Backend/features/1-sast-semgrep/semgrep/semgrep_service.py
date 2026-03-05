@@ -20,10 +20,10 @@ class SemgrepService:
     async def run(project_path: str) -> dict:
         """
         Lance Semgrep et retourne les résultats parsés.
-
+        
         Args:
             project_path: Chemin du projet à analyser
-
+            
         Returns:
             Dict avec les résultats parsés
         """
@@ -38,7 +38,7 @@ class SemgrepService:
                     "status": "error",
                     "error": "Semgrep is not installed. Install with: pip install semgrep",
                 }
-
+            
             # Construire la commande Semgrep avec timeout strict
             # Utiliser une config disponible localement pour plus de vitesse
             cmd = [
@@ -47,8 +47,7 @@ class SemgrepService:
                 "--no-git-ignore",
                 "--timeout=60",  # 60 secondes par fichier max
                 "--max-target-bytes=1000000",  # Limite la taille des fichiers
-                "-c",
-                "p/security-audit",  # Config pré-compilée pour l'audit de sécurité
+                "-c", "p/security-audit",  # Config pré-compilée pour l'audit de sécurité
                 str(project_path),
             ]
 
@@ -59,11 +58,12 @@ class SemgrepService:
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-
+                
                 # Timeout global de 120 secondes
                 try:
                     stdout, stderr = await asyncio.wait_for(
-                        process.communicate(), timeout=120.0
+                        process.communicate(),
+                        timeout=120.0
                     )
                 except asyncio.TimeoutError:
                     process.kill()
@@ -116,10 +116,10 @@ class SemgrepService:
     def parse_vulnerabilities(semgrep_results: dict) -> list[dict]:
         """
         Convertit les résultats Semgrep en format vulnérabilité standardisé.
-
+        
         Args:
             semgrep_results: Résultats bruts de Semgrep
-
+            
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -155,14 +155,15 @@ class SemgrepService:
         }
         return mapping.get(semgrep_severity, "low")
 
+
     @staticmethod
     def parse_vulnerabilities(semgrep_results: dict) -> list[dict]:
         """
         Convertit les résultats Semgrep en format vulnérabilité standardisé.
-
+        
         Args:
             semgrep_results: Résultats bruts de Semgrep
-
+            
         Returns:
             Liste de vulnérabilités standardisées
         """

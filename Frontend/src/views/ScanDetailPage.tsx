@@ -32,9 +32,7 @@ export function ScanDetailPage() {
         setProgress(progressData);
         setFiles(filesData);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Erreur lors du chargement",
-        );
+        setError(err instanceof Error ? err.message : "Erreur lors du chargement");
       } finally {
         setLoading(false);
       }
@@ -48,21 +46,13 @@ export function ScanDetailPage() {
       if (scanId) {
         if (scan?.status === "running") {
           Promise.all([
-            getScanProgress(scanId)
-              .then(setProgress)
-              .catch(() => {}),
-            getScanFiles(scanId)
-              .then(setFiles)
-              .catch(() => {}),
-            getScan(scanId)
-              .then(setScan)
-              .catch(() => {}),
+            getScanProgress(scanId).then(setProgress).catch(() => {}),
+            getScanFiles(scanId).then(setFiles).catch(() => {}),
+            getScan(scanId).then(setScan).catch(() => {}),
           ]);
         } else if (scan?.status === "completed" && !files) {
           // Charger les fichiers une fois si le scan est terminé et qu'on ne les a pas encore
-          getScanFiles(scanId)
-            .then(setFiles)
-            .catch(() => {});
+          getScanFiles(scanId).then(setFiles).catch(() => {});
         }
       }
     }, 2000);
@@ -72,20 +62,20 @@ export function ScanDetailPage() {
 
   const handleRunScan = async () => {
     if (!scanId) return;
-
+    
     // Empêcher les doubles clics si le scan est déjà en cours
     if (scan?.status === "running" || startingScan) {
       return;
     }
-
+    
     setStartingScan(true);
     setError(null);
-
+    
     // Mettre à jour le statut localement immédiatement pour un feedback instantané
     if (scan) {
       setScan({ ...scan, status: "running" });
     }
-
+    
     try {
       await runScan(scanId);
       // Rafraîchir les données immédiatement
@@ -96,14 +86,10 @@ export function ScanDetailPage() {
       setScan(scanData);
       setProgress(progressData);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erreur lors du lancement du scan";
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du lancement du scan";
       setError(errorMessage);
       // Si l'erreur indique que le scan est déjà en cours, rafraîchir les données
-      if (
-        errorMessage.includes("déjà en cours") ||
-        errorMessage.includes("already running")
-      ) {
+      if (errorMessage.includes("déjà en cours") || errorMessage.includes("already running")) {
         const scanData = await getScan(scanId).catch(() => null);
         if (scanData) {
           setScan(scanData);
@@ -126,9 +112,7 @@ export function ScanDetailPage() {
     return (
       <div className="page">
         <p className="auth-error">{error || "Scan introuvable"}</p>
-        <Button onClick={() => navigate("/dashboard")}>
-          Retour au dashboard
-        </Button>
+        <Button onClick={() => navigate("/dashboard")}>Retour au dashboard</Button>
       </div>
     );
   }
@@ -166,113 +150,52 @@ export function ScanDetailPage() {
 
   return (
     <div className="page">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <div>
           <h1>Détails du scan</h1>
           <p className="text-muted">
             Statut :{" "}
-            <span
-              style={{
-                color: getStatusColor(scan?.status || "pending"),
-                fontWeight: 500,
-                textTransform: "capitalize",
-              }}
-            >
+            <span style={{ color: getStatusColor(scan?.status || "pending"), fontWeight: 500, textTransform: "capitalize" }}>
               {scan?.status || "pending"}
             </span>
           </p>
         </div>
-        <Button
-          className="btn-secondary"
-          onClick={() => navigate("/dashboard")}
-        >
+        <Button className="btn-secondary" onClick={() => navigate("/dashboard")}>
           Retour
         </Button>
       </div>
 
       {/* Informations du scan */}
       {scan && (
-        <section
-          style={{
-            marginBottom: "2rem",
-            padding: "1.5rem",
-            background: "var(--bg-card)",
-            borderRadius: "12px",
-            border: "1px solid var(--border)",
-          }}
-        >
+        <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
           <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Informations</h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "1rem",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
             <div>
-              <strong
-                className="text-muted"
-                style={{ display: "block", marginBottom: "0.25rem" }}
-              >
-                Créé le
-              </strong>
+              <strong className="text-muted" style={{ display: "block", marginBottom: "0.25rem" }}>Créé le</strong>
               <span>{new Date(scan.created_at).toLocaleString("fr-FR")}</span>
             </div>
             {scan.started_at && (
               <div>
-                <strong
-                  className="text-muted"
-                  style={{ display: "block", marginBottom: "0.25rem" }}
-                >
-                  Démarré le
-                </strong>
+                <strong className="text-muted" style={{ display: "block", marginBottom: "0.25rem" }}>Démarré le</strong>
                 <span>{new Date(scan.started_at).toLocaleString("fr-FR")}</span>
               </div>
             )}
             {scan.finished_at && (
               <div>
-                <strong
-                  className="text-muted"
-                  style={{ display: "block", marginBottom: "0.25rem" }}
-                >
-                  Terminé le
-                </strong>
-                <span>
-                  {new Date(scan.finished_at).toLocaleString("fr-FR")}
-                </span>
+                <strong className="text-muted" style={{ display: "block", marginBottom: "0.25rem" }}>Terminé le</strong>
+                <span>{new Date(scan.finished_at).toLocaleString("fr-FR")}</span>
               </div>
             )}
             {scan.repository_url && (
               <div>
-                <strong
-                  className="text-muted"
-                  style={{ display: "block", marginBottom: "0.25rem" }}
-                >
-                  Dépôt Git
-                </strong>
-                <span style={{ wordBreak: "break-all" }}>
-                  {scan.repository_url}
-                </span>
+                <strong className="text-muted" style={{ display: "block", marginBottom: "0.25rem" }}>Dépôt Git</strong>
+                <span style={{ wordBreak: "break-all" }}>{scan.repository_url}</span>
               </div>
             )}
             {scan.upload_path && (
               <div>
-                <strong
-                  className="text-muted"
-                  style={{ display: "block", marginBottom: "0.25rem" }}
-                >
-                  Fichier téléversé
-                </strong>
-                <span style={{ wordBreak: "break-all" }}>
-                  ✓ Fichier décompressé
-                </span>
+                <strong className="text-muted" style={{ display: "block", marginBottom: "0.25rem" }}>Fichier téléversé</strong>
+                <span style={{ wordBreak: "break-all" }}>✓ Fichier décompressé</span>
               </div>
             )}
           </div>
@@ -281,31 +204,10 @@ export function ScanDetailPage() {
 
       {/* Progression des tâches (si scan non terminé) */}
       {!isCompleted && progress && scan && (
-        <section
-          style={{
-            marginBottom: "2rem",
-            padding: "1.5rem",
-            background: "var(--bg-card)",
-            borderRadius: "12px",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1.5rem",
-            }}
-          >
+        <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <h2 style={{ margin: 0 }}>Progression de l'analyse</h2>
-            <span
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: 600,
-                color: getStatusColor(scan?.status || "running"),
-              }}
-            >
+            <span style={{ fontSize: "1.25rem", fontWeight: 600, color: getStatusColor(scan?.status || "running") }}>
               {progress.overall_progress}%
             </span>
           </div>
@@ -333,9 +235,7 @@ export function ScanDetailPage() {
           </div>
 
           {/* Liste des tâches */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {progress.tasks.map((task) => (
               <div
                 key={task.tool_name}
@@ -346,20 +246,9 @@ export function ScanDetailPage() {
                   border: "1px solid var(--border)",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "0.75rem",
-                  }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                   <div>
-                    <strong
-                      style={{ display: "block", marginBottom: "0.25rem" }}
-                    >
-                      {task.display_name}
-                    </strong>
+                    <strong style={{ display: "block", marginBottom: "0.25rem" }}>{task.display_name}</strong>
                     <span
                       style={{
                         fontSize: "0.85rem",
@@ -367,22 +256,10 @@ export function ScanDetailPage() {
                         textTransform: "capitalize",
                       }}
                     >
-                      {task.status === "pending"
-                        ? "En attente"
-                        : task.status === "running"
-                          ? "En cours"
-                          : task.status === "completed"
-                            ? "Terminé"
-                            : "Erreur"}
+                      {task.status === "pending" ? "En attente" : task.status === "running" ? "En cours" : task.status === "completed" ? "Terminé" : "Erreur"}
                     </span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 600,
-                      color: getTaskStatusColor(task.status),
-                    }}
-                  >
+                  <span style={{ fontSize: "1.1rem", fontWeight: 600, color: getTaskStatusColor(task.status) }}>
                     {task.progress}%
                   </span>
                 </div>
@@ -405,96 +282,48 @@ export function ScanDetailPage() {
                   />
                 </div>
                 {task.started_at && (
-                  <small
-                    className="text-muted"
-                    style={{ display: "block", marginTop: "0.5rem" }}
-                  >
-                    Démarré :{" "}
-                    {new Date(task.started_at).toLocaleString("fr-FR")}
+                  <small className="text-muted" style={{ display: "block", marginTop: "0.5rem" }}>
+                    Démarré : {new Date(task.started_at).toLocaleString("fr-FR")}
                   </small>
                 )}
                 {task.finished_at && (
-                  <small
-                    className="text-muted"
-                    style={{ display: "block", marginTop: "0.25rem" }}
-                  >
-                    Terminé :{" "}
-                    {new Date(task.finished_at).toLocaleString("fr-FR")}
+                  <small className="text-muted" style={{ display: "block", marginTop: "0.25rem" }}>
+                    Terminé : {new Date(task.finished_at).toLocaleString("fr-FR")}
                   </small>
                 )}
-
+                
                 {/* Afficher les fichiers analysés pour cet outil */}
                 {files && files.files_by_tool[task.tool_name] && (
-                  <div
-                    style={{
-                      marginTop: "1rem",
-                      paddingTop: "1rem",
-                      borderTop: "1px solid var(--border)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <strong style={{ fontSize: "0.9rem" }}>
-                        Fichiers analysés :
-                      </strong>
-                      <span
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        {files.files_by_tool[task.tool_name].count} fichier
-                        {files.files_by_tool[task.tool_name].count > 1
-                          ? "s"
-                          : ""}
+                  <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <strong style={{ fontSize: "0.9rem" }}>Fichiers analysés :</strong>
+                      <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                        {files.files_by_tool[task.tool_name].count} fichier{files.files_by_tool[task.tool_name].count > 1 ? "s" : ""}
                       </span>
                     </div>
-                    <div
-                      style={{
-                        maxHeight: "150px",
-                        overflowY: "auto",
-                        background: "var(--bg)",
-                        borderRadius: "4px",
-                        padding: "0.5rem",
-                        fontSize: "0.85rem",
-                        fontFamily: "monospace",
-                      }}
-                    >
-                      {files.files_by_tool[task.tool_name].files
-                        .slice(0, 20)
-                        .map((file: string, idx: number) => (
-                          <div
-                            key={idx}
-                            style={{
-                              padding: "0.25rem 0",
-                              color: "var(--text-muted)",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            📄 {file}
-                          </div>
-                        ))}
-                      {files.files_by_tool[task.tool_name].files.length >
-                        20 && (
-                        <div
-                          style={{
-                            color: "var(--text-muted)",
-                            fontStyle: "italic",
-                            marginTop: "0.5rem",
-                          }}
-                        >
-                          ... et{" "}
-                          {files.files_by_tool[task.tool_name].files.length -
-                            20}{" "}
-                          autre(s) fichier(s)
+                    <div style={{ 
+                      maxHeight: "150px", 
+                      overflowY: "auto", 
+                      background: "var(--bg)",
+                      borderRadius: "4px",
+                      padding: "0.5rem",
+                      fontSize: "0.85rem",
+                      fontFamily: "monospace",
+                    }}>
+                      {files.files_by_tool[task.tool_name].files.slice(0, 20).map((file: string, idx: number) => (
+                        <div key={idx} style={{ 
+                          padding: "0.25rem 0",
+                          color: "var(--text-muted)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}>
+                          📄 {file}
+                        </div>
+                      ))}
+                      {files.files_by_tool[task.tool_name].files.length > 20 && (
+                        <div style={{ color: "var(--text-muted)", fontStyle: "italic", marginTop: "0.5rem" }}>
+                          ... et {files.files_by_tool[task.tool_name].files.length - 20} autre(s) fichier(s)
                         </div>
                       )}
                     </div>
@@ -503,59 +332,33 @@ export function ScanDetailPage() {
               </div>
             ))}
           </div>
-
+          
           {/* Section fichiers analysés globale */}
           {files && files.total_files > 0 && (
-            <div
-              style={{
-                marginTop: "2rem",
-                padding: "1.5rem",
-                background: "var(--bg-elevated)",
-                borderRadius: "8px",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <h3 style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>
-                📁 Fichiers analysés
-              </h3>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "1rem",
-                }}
-              >
+            <div style={{ marginTop: "2rem", padding: "1.5rem", background: "var(--bg-elevated)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+              <h3 style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>📁 Fichiers analysés</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                 <span style={{ color: "var(--text-muted)" }}>
-                  Total :{" "}
-                  <strong style={{ color: "var(--text)" }}>
-                    {files.total_files}
-                  </strong>{" "}
-                  fichier{files.total_files > 1 ? "s" : ""}
+                  Total : <strong style={{ color: "var(--text)" }}>{files.total_files}</strong> fichier{files.total_files > 1 ? "s" : ""}
                 </span>
               </div>
-              <div
-                style={{
-                  maxHeight: "300px",
-                  overflowY: "auto",
-                  background: "var(--bg)",
-                  borderRadius: "4px",
-                  padding: "0.75rem",
-                  fontSize: "0.85rem",
-                  fontFamily: "monospace",
-                }}
-              >
+              <div style={{ 
+                maxHeight: "300px", 
+                overflowY: "auto", 
+                background: "var(--bg)",
+                borderRadius: "4px",
+                padding: "0.75rem",
+                fontSize: "0.85rem",
+                fontFamily: "monospace",
+              }}>
                 {files.all_files.map((file: string, idx: number) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: "0.25rem 0",
-                      color: "var(--text-muted)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <div key={idx} style={{ 
+                    padding: "0.25rem 0",
+                    color: "var(--text-muted)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
                     📄 {file}
                   </div>
                 ))}
@@ -601,45 +404,17 @@ export function ScanDetailPage() {
 
       {/* Section fichiers analysés (toujours visible si des fichiers sont disponibles) */}
       {files && files.total_files > 0 ? (
-        <section
-          style={{
-            marginBottom: "2rem",
-            padding: "1.5rem",
-            background: "var(--bg-card)",
-            borderRadius: "12px",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>
-            📁 Fichiers analysés
-          </h2>
-
+        <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+          <h2 style={{ marginTop: 0, marginBottom: "1.5rem" }}>📁 Fichiers analysés</h2>
+          
           {/* Statistiques globales */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1.5rem",
-              padding: "1rem",
-              background: "var(--bg-elevated)",
-              borderRadius: "8px",
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", padding: "1rem", background: "var(--bg-elevated)", borderRadius: "8px" }}>
             <div>
-              <strong
-                style={{
-                  fontSize: "1.1rem",
-                  display: "block",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                {files.total_files} fichier{files.total_files > 1 ? "s" : ""}{" "}
-                analysé{files.total_files > 1 ? "s" : ""}
+              <strong style={{ fontSize: "1.1rem", display: "block", marginBottom: "0.25rem" }}>
+                {files.total_files} fichier{files.total_files > 1 ? "s" : ""} analysé{files.total_files > 1 ? "s" : ""}
               </strong>
               <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-                Répartis sur {Object.keys(files.files_by_tool).length} outil
-                {Object.keys(files.files_by_tool).length > 1 ? "s" : ""}
+                Répartis sur {Object.keys(files.files_by_tool).length} outil{Object.keys(files.files_by_tool).length > 1 ? "s" : ""}
               </span>
             </div>
           </div>
@@ -647,129 +422,74 @@ export function ScanDetailPage() {
           {/* Fichiers par outil */}
           {Object.keys(files.files_by_tool).length > 0 && (
             <div style={{ marginBottom: "2rem" }}>
-              <h3
-                style={{
-                  fontSize: "1rem",
-                  marginBottom: "1rem",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Par outil d'analyse
-              </h3>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
-                }}
-              >
-                {Object.entries(files.files_by_tool).map(
-                  ([toolName, toolData]) => (
-                    <div
-                      key={toolName}
-                      style={{
-                        padding: "1rem",
-                        background: "var(--bg-elevated)",
-                        borderRadius: "8px",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "0.75rem",
-                        }}
-                      >
-                        <strong style={{ textTransform: "capitalize" }}>
-                          {toolName}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: "0.9rem",
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          {toolData.count} fichier
-                          {toolData.count > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          maxHeight: "200px",
-                          overflowY: "auto",
-                          background: "var(--bg)",
-                          borderRadius: "4px",
-                          padding: "0.75rem",
-                          fontSize: "0.85rem",
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        {toolData.files.map((file: string, idx: number) => (
-                          <div
-                            key={idx}
-                            style={{
-                              padding: "0.35rem 0",
-                              color: "var(--text)",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              borderBottom:
-                                idx < toolData.files.length - 1
-                                  ? "1px solid var(--border)"
-                                  : "none",
-                            }}
-                          >
-                            📄 {file}
-                          </div>
-                        ))}
-                      </div>
+              <h3 style={{ fontSize: "1rem", marginBottom: "1rem", color: "var(--text-muted)" }}>Par outil d'analyse</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {Object.entries(files.files_by_tool).map(([toolName, toolData]) => (
+                  <div
+                    key={toolName}
+                    style={{
+                      padding: "1rem",
+                      background: "var(--bg-elevated)",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                      <strong style={{ textTransform: "capitalize" }}>{toolName}</strong>
+                      <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                        {toolData.count} fichier{toolData.count > 1 ? "s" : ""}
+                      </span>
                     </div>
-                  ),
-                )}
+                    <div style={{ 
+                      maxHeight: "200px", 
+                      overflowY: "auto", 
+                      background: "var(--bg)",
+                      borderRadius: "4px",
+                      padding: "0.75rem",
+                      fontSize: "0.85rem",
+                      fontFamily: "monospace",
+                    }}>
+                      {toolData.files.map((file: string, idx: number) => (
+                        <div key={idx} style={{ 
+                          padding: "0.35rem 0",
+                          color: "var(--text)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          borderBottom: idx < toolData.files.length - 1 ? "1px solid var(--border)" : "none",
+                        }}>
+                          📄 {file}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {/* Liste complète de tous les fichiers */}
           <div>
-            <h3
-              style={{
-                fontSize: "1rem",
-                marginBottom: "1rem",
-                color: "var(--text-muted)",
-              }}
-            >
-              Liste complète
-            </h3>
-            <div
-              style={{
-                maxHeight: "400px",
-                overflowY: "auto",
-                background: "var(--bg-elevated)",
-                borderRadius: "8px",
-                padding: "1rem",
-                fontSize: "0.85rem",
-                fontFamily: "monospace",
-                border: "1px solid var(--border)",
-              }}
-            >
+            <h3 style={{ fontSize: "1rem", marginBottom: "1rem", color: "var(--text-muted)" }}>Liste complète</h3>
+            <div style={{ 
+              maxHeight: "400px", 
+              overflowY: "auto", 
+              background: "var(--bg-elevated)",
+              borderRadius: "8px",
+              padding: "1rem",
+              fontSize: "0.85rem",
+              fontFamily: "monospace",
+              border: "1px solid var(--border)",
+            }}>
               {files.all_files.map((file: string, idx: number) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: "0.4rem 0",
-                    color: "var(--text)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    borderBottom:
-                      idx < files.all_files.length - 1
-                        ? "1px solid var(--border)"
-                        : "none",
-                  }}
-                >
+                <div key={idx} style={{ 
+                  padding: "0.4rem 0",
+                  color: "var(--text)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  borderBottom: idx < files.all_files.length - 1 ? "1px solid var(--border)" : "none",
+                }}>
                   📄 {file}
                 </div>
               ))}
@@ -778,22 +498,11 @@ export function ScanDetailPage() {
         </section>
       ) : (
         // Message si aucun fichier n'est trouvé
-        scan &&
-        (scan.status === "completed" || scan.status === "running") && (
-          <section
-            style={{
-              marginBottom: "2rem",
-              padding: "1.5rem",
-              background: "var(--bg-card)",
-              borderRadius: "12px",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>
-              📁 Fichiers analysés
-            </h2>
+        scan && (scan.status === "completed" || scan.status === "running") && (
+          <section style={{ marginBottom: "2rem", padding: "1.5rem", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>📁 Fichiers analysés</h2>
             <p style={{ color: "var(--text-muted)" }}>
-              {scan.status === "running"
+              {scan.status === "running" 
                 ? "Les fichiers analysés seront affichés une fois l'analyse terminée..."
                 : "Aucun fichier analysé trouvé. L'analyse peut être en cours de traitement."}
             </p>

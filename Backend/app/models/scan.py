@@ -1,8 +1,12 @@
+"""Modèle Scan."""
+
 import uuid
 from datetime import datetime
+
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.db.base import Base
 
 
@@ -17,12 +21,6 @@ class Scan(Base):
     )
     repository_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     upload_path: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    # Chemin absolu du repo cloné/extrait sur disque.
-    # Renseigné par ScanOrchestrator au démarrage du scan — indispensable
-    # pour que RemediationService et GitService retrouvent les sources.
-    clone_path: Mapped[str | None] = mapped_column(Text, nullable=True)
-
     language: Mapped[str | None] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -36,8 +34,5 @@ class Scan(Base):
         "Vulnerability", back_populates="scan", cascade="all, delete-orphan"
     )
     metrics: Mapped["ScanMetrics | None"] = relationship(
-        "ScanMetrics",
-        back_populates="scan",
-        uselist=False,
-        cascade="all, delete-orphan",
+        "ScanMetrics", back_populates="scan", uselist=False, cascade="all, delete-orphan"
     )

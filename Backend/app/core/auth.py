@@ -31,9 +31,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
 
 
-def create_access_token(
-    subject: str | Any, expires_delta: timedelta | None = None
-) -> str:
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
     """
     Crée un JWT avec le subject (en général l'id utilisateur en string).
     Retourne le token (à mettre dans un cookie côté route).

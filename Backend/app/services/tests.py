@@ -11,16 +11,15 @@ import sys
 
 # Example pour tester les services individuellement
 
-
 async def test_semgrep():
     """Test le service Semgrep."""
     from app.services.semgrep_service import SemgrepService
-
+    
     project_path = "/path/to/your/project"
     result = await SemgrepService.run(project_path)
     print("Semgrep result:")
     print(json.dumps(result, indent=2, default=str))
-
+    
     # Parser les vulnérabilités
     vulns = SemgrepService.parse_vulnerabilities(result)
     print(f"\nParsed vulnerabilities: {len(vulns)}")
@@ -31,12 +30,12 @@ async def test_semgrep():
 async def test_pip_audit():
     """Test le service pip-audit."""
     from app.services.pip_audit_service import PipAuditService
-
+    
     project_path = "/path/to/your/project"
     result = await PipAuditService.run(project_path)
     print("pip-audit result:")
     print(json.dumps(result, indent=2, default=str))
-
+    
     # Parser les vulnérabilités
     vulns = PipAuditService.parse_vulnerabilities(result)
     print(f"\nParsed vulnerabilities: {len(vulns)}")
@@ -47,12 +46,12 @@ async def test_pip_audit():
 async def test_npm_audit():
     """Test le service npm-audit."""
     from app.services.pip_audit_service import NpmAuditService
-
+    
     project_path = "/path/to/your/project"
     result = await NpmAuditService.run(project_path)
     print("npm-audit result:")
     print(json.dumps(result, indent=2, default=str))
-
+    
     # Parser les vulnérabilités
     vulns = NpmAuditService.parse_vulnerabilities(result)
     print(f"\nParsed vulnerabilities: {len(vulns)}")
@@ -63,12 +62,12 @@ async def test_npm_audit():
 async def test_trufflehog():
     """Test le service TruffleHog."""
     from app.services.trufflehog_service import TruffleHogService
-
+    
     project_path = "/path/to/your/project"
     result = await TruffleHogService.run(project_path)
     print("TruffleHog result:")
     print(json.dumps(result, indent=2, default=str))
-
+    
     # Parser les vulnérabilités
     vulns = TruffleHogService.parse_vulnerabilities(result)
     print(f"\nParsed vulnerabilities: {len(vulns)}")
@@ -82,20 +81,20 @@ async def test_orchestrator():
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from uuid import uuid4
-
+    
     # Créer une session de test
     DATABASE_URL = "postgresql://user:password@localhost/securescan"
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
-
+    
     try:
         project_path = "/path/to/your/project"
         scan_id = uuid4()
-
+        
         orchestrator = ScanOrchestrator(db)
         result = await orchestrator.run_scan(scan_id, project_path)
-
+        
         print("Orchestrator result:")
         print(json.dumps(result, indent=2, default=str))
     finally:
