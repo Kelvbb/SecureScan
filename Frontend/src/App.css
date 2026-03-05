@@ -217,23 +217,21 @@
   color: var(--text);
 }
 
-/* Nav : bouton déconnexion (style lien) */
-/* Bouton Déconnexion : style lien / ghost, distinct du bouton principal */
+/* Nav : bouton déconnexion */
 .btn-logout {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: var(--accent);
+  border: none;
+  color: var(--bg);
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease;
 }
 .btn-logout:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-muted);
-  color: var(--text);
+  background: var(--accent-hover);
+  color: var(--bg);
 }
 
 /* Page confirmation inscription */

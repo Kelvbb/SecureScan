@@ -17,7 +17,6 @@ export function AuthenticatedHeader() {
           SecureScan
         </Link>
         <nav className="nav">
-          <Link to="/dashboard">Tableau de bord</Link>
           <button
             type="button"
             className="btn-logout"
