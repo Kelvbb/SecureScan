@@ -9,39 +9,35 @@ from pathlib import Path
 print("Tester Semgrep avec la configuration rapide...")
 print("=" * 70)
 
-code = '''import os
+code = """import os
 user = input()
 os.system(f"echo {user}")
 x = eval(input())
-'''
+"""
 
 with tempfile.TemporaryDirectory() as tmpdir:
     test_dir = Path(tmpdir)
     (test_dir / "test.py").write_text(code)
-    
+
     cmd = [
         "semgrep",
         "--json",
         "--no-git-ignore",
         "--timeout=60",
         "--max-target-bytes=1000000",
-        "-c", "p/security-audit",
+        "-c",
+        "p/security-audit",
         str(test_dir),
     ]
-    
+
     print(f"Commande: {' '.join(cmd)}")
     print()
-    
+
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120
-        )
-        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+
         print(f"Exit code: {result.returncode}")
-        
+
         if result.stdout:
             try:
                 data = json.loads(result.stdout)
@@ -54,10 +50,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 print(f"Output: {result.stdout[:200]}")
         else:
             print(f"Pas de résultats (stdout vide)")
-        
+
         if result.stderr:
             print(f"\nStderr: {result.stderr[:200]}")
-            
+
     except subprocess.TimeoutExpired:
         print(f"✗ Timeout après 120s")
     except Exception as e:

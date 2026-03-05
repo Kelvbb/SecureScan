@@ -188,16 +188,19 @@ class ReportGenerator:
         if not scan:
             raise ValueError(f"Scan {scan_id} not found")
 
-        vulnerabilities = db.query(Vulnerability).filter(
-            Vulnerability.scan_id == scan_id
-        ).options(
-            joinedload(Vulnerability.tool_execution),
-            joinedload(Vulnerability.owasp_category)
-        ).all()
+        vulnerabilities = (
+            db.query(Vulnerability)
+            .filter(Vulnerability.scan_id == scan_id)
+            .options(
+                joinedload(Vulnerability.tool_execution),
+                joinedload(Vulnerability.owasp_category),
+            )
+            .all()
+        )
 
-        tool_executions = db.query(ToolExecution).filter(
-            ToolExecution.scan_id == scan_id
-        ).all()
+        tool_executions = (
+            db.query(ToolExecution).filter(ToolExecution.scan_id == scan_id).all()
+        )
 
         # Calculer les statistiques
         stats = self._calculate_statistics(vulnerabilities, tool_executions)
@@ -208,7 +211,11 @@ class ReportGenerator:
                 "id": str(scan.id),
                 "repository_url": scan.repository_url,
                 "status": scan.status,
-                "created_at": scan.created_at.strftime("%d/%m/%Y %H:%M") if scan.created_at else "",
+                "created_at": (
+                    scan.created_at.strftime("%d/%m/%Y %H:%M")
+                    if scan.created_at
+                    else ""
+                ),
             },
             "vulnerabilities": [
                 {
@@ -216,16 +223,34 @@ class ReportGenerator:
                     "description": v.description,
                     "severity": v.severity,
                     "file": v.file_path,
-                    "line": f"{v.line_start}-{v.line_end}" if (v.line_start and v.line_end and v.line_start != v.line_end) else (v.line_start or v.line_end or None),
-                    "owasp_category": v.owasp_category.name if v.owasp_category else None,
-                    "tool_name": v.tool_execution.raw_output.get("tool", "unknown") if (v.tool_execution and v.tool_execution.raw_output and isinstance(v.tool_execution.raw_output, dict)) else "unknown",
+                    "line": (
+                        f"{v.line_start}-{v.line_end}"
+                        if (v.line_start and v.line_end and v.line_start != v.line_end)
+                        else (v.line_start or v.line_end or None)
+                    ),
+                    "owasp_category": (
+                        v.owasp_category.name if v.owasp_category else None
+                    ),
+                    "tool_name": (
+                        v.tool_execution.raw_output.get("tool", "unknown")
+                        if (
+                            v.tool_execution
+                            and v.tool_execution.raw_output
+                            and isinstance(v.tool_execution.raw_output, dict)
+                        )
+                        else "unknown"
+                    ),
                     "remediation": None,  # Pas de champ dans le modèle
                 }
                 for v in vulnerabilities
             ],
             "tool_executions": [
                 {
-                    "tool_name": t.raw_output.get("tool", "unknown") if t.raw_output and isinstance(t.raw_output, dict) else "unknown",
+                    "tool_name": (
+                        t.raw_output.get("tool", "unknown")
+                        if t.raw_output and isinstance(t.raw_output, dict)
+                        else "unknown"
+                    ),
                     "status": t.status,
                 }
                 for t in tool_executions
@@ -246,13 +271,13 @@ class ReportGenerator:
 
         try:
             html_obj = HTML(string=html_content)
-            
+
             css_styles = CSS(string="""
                 @page { size: A4; margin: 2cm; }
                 body { font-family: 'Segoe UI', sans-serif; color: #333; }
                 h2 { page-break-after: avoid; }
             """)
-            
+
             pdf_bytes = html_obj.write_pdf(stylesheets=[css_styles])
             return pdf_bytes
 
@@ -260,7 +285,9 @@ class ReportGenerator:
             logger.error(f"Erreur lors de la génération du PDF: {e}")
             raise
 
-    def _calculate_statistics(self, vulnerabilities: list, tool_executions: list) -> dict:
+    def _calculate_statistics(
+        self, vulnerabilities: list, tool_executions: list
+    ) -> dict:
         """Calcule les statistiques des vulnérabilités."""
         stats = {
             "total": len(vulnerabilities),
@@ -283,7 +310,11 @@ class ReportGenerator:
                 stats["low"] += 1
 
             tool = "unknown"
-            if vuln.tool_execution and vuln.tool_execution.raw_output and isinstance(vuln.tool_execution.raw_output, dict):
+            if (
+                vuln.tool_execution
+                and vuln.tool_execution.raw_output
+                and isinstance(vuln.tool_execution.raw_output, dict)
+            ):
                 tool = vuln.tool_execution.raw_output.get("tool", "unknown")
             stats["by_tool"][tool] = stats["by_tool"].get(tool, 0) + 1
 

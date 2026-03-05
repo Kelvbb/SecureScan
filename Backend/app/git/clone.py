@@ -16,31 +16,32 @@ class GitCloneError(RuntimeError):
 def clone_repository(repo_url: str, target_path: Path, timeout: int = 300) -> Path:
     """
     Clone un dépôt Git vers le chemin cible.
-    
+
     Args:
         repo_url: URL du dépôt Git (HTTPS ou SSH)
         target_path: Chemin où cloner le dépôt
         timeout: Délai maximum en secondes (défaut: 300 = 5 minutes)
-    
+
     Returns:
         Chemin du dépôt cloné
-    
+
     Raises:
         GitCloneError: Si le clonage échoue
     """
     target_path = Path(target_path).resolve()
-    
+
     # Vérifier que le répertoire parent existe
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Si le répertoire existe déjà, le supprimer
     if target_path.exists():
         logger.warning(f"Le répertoire {target_path} existe déjà, suppression...")
         import shutil
+
         shutil.rmtree(target_path)
-    
+
     logger.info(f"Clonage de {repo_url} vers {target_path}")
-    
+
     try:
         subprocess.run(
             ["git", "clone", repo_url, str(target_path)],
@@ -75,7 +76,7 @@ def clone_repository_with_auth(
 ) -> Path:
     """
     Clone un dépôt Git avec authentification (token ou username/password).
-    
+
     Args:
         repo_url: URL du dépôt Git
         target_path: Chemin où cloner le dépôt
@@ -83,10 +84,10 @@ def clone_repository_with_auth(
         username: Nom d'utilisateur (si pas de token)
         password: Mot de passe (si pas de token)
         timeout: Délai maximum en secondes
-    
+
     Returns:
         Chemin du dépôt cloné
-    
+
     Raises:
         GitCloneError: Si le clonage échoue
     """
@@ -98,7 +99,9 @@ def clone_repository_with_auth(
         elif repo_url.startswith("http://"):
             repo_url = repo_url.replace("http://", f"http://{token}@")
         else:
-            logger.warning("Token fourni mais URL n'est pas HTTPS/HTTP, utilisation directe")
+            logger.warning(
+                "Token fourni mais URL n'est pas HTTPS/HTTP, utilisation directe"
+            )
     elif username and password:
         # Format: https://username:password@github.com/user/repo.git
         if repo_url.startswith("https://"):
@@ -106,6 +109,8 @@ def clone_repository_with_auth(
         elif repo_url.startswith("http://"):
             repo_url = repo_url.replace("http://", f"http://{username}:{password}@")
         else:
-            logger.warning("Username/password fournis mais URL n'est pas HTTPS/HTTP, utilisation directe")
-    
+            logger.warning(
+                "Username/password fournis mais URL n'est pas HTTPS/HTTP, utilisation directe"
+            )
+
     return clone_repository(repo_url, target_path, timeout)

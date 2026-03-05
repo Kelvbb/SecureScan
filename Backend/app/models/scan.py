@@ -34,5 +34,8 @@ class Scan(Base):
         "Vulnerability", back_populates="scan", cascade="all, delete-orphan"
     )
     metrics: Mapped["ScanMetrics | None"] = relationship(
-        "ScanMetrics", back_populates="scan", uselist=False, cascade="all, delete-orphan"
+        "ScanMetrics",
+        back_populates="scan",
+        uselist=False,
+        cascade="all, delete-orphan",
     )

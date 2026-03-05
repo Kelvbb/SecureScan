@@ -37,4 +37,5 @@ def init_db() -> None:
         User,
         Vulnerability,
     )
+
     Base.metadata.create_all(bind=engine)
