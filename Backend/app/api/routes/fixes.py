@@ -1,14 +1,8 @@
 """
-Endpoints de remédiation — SecureScan.
+Endpoints de remédiation
 
 GET  /scans/{scan_id}/fixes        → liste les corrections proposées
 POST /scans/{scan_id}/fixes/apply  → applique les corrections validées + push Git
-
-Contraintes métier :
-  - Aucune modification n'est poussée sans au moins un fix_id validé (min_length=1).
-  - Chaque fix expose son owasp_category (ex : "A05 – Injection").
-  - Le message de commit est normalisé : "SECURESCAN: Automated security fixes applied".
-  - Les credentials Git (token, auteur) proviennent exclusivement de config.py / .env.
 """
 
 from __future__ import annotations
@@ -36,11 +30,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/scans", tags=["Remediation"])
 
-# ---------------------------------------------------------------------------
-# Constantes
-# ---------------------------------------------------------------------------
-
-# Message de commit normalisé — ne pas modifier sans aligner les tests.
 GIT_COMMIT_MESSAGE = "SECURESCAN: Automated security fixes applied"
 
 
@@ -58,8 +47,8 @@ class FixProposalOut(BaseModel):
     fixed_line: str
     patch_diff: str
     description: str
-    owasp_category: str  # ex : "A05 – Injection"
-    fix_type: str  # ex : "sql_injection"
+    owasp_category: str
+    fix_type: str
     auto_applicable: bool
 
     model_config = {"from_attributes": True}
@@ -72,13 +61,6 @@ class FixesListOut(BaseModel):
 
 
 class ApplyFixesIn(BaseModel):
-    """
-    IDs des SuggestedFix que l'utilisateur a explicitement validés dans l'interface.
-
-    Contrainte : au moins un ID requis — aucune correction ne peut être poussée
-    sans validation explicite de l'utilisateur (min_length=1).
-    """
-
     fix_ids: list[uuid.UUID] = Field(..., min_length=1)
 
 
@@ -86,7 +68,7 @@ class ApplyFixesOut(BaseModel):
     scan_id: uuid.UUID
     applied_fix_ids: list[uuid.UUID]
     skipped_fix_ids: list[uuid.UUID]
-    errors: dict[str, str]  # str(fix_id) → message d'erreur
+    errors: dict[str, str]
     git_branch: str | None = None
     git_commit: str | None = None
     git_pushed: bool = False
@@ -107,32 +89,51 @@ def _get_scan_or_404(scan_id: uuid.UUID, db: Session) -> Scan:
     return scan
 
 
+def _get_clone_path(scan: Scan) -> Path:
+    """
+    Retourne le chemin absolu du repo cloné.
+
+    Priorité :
+    1. scan.clone_path — sauvegardé par ScanOrchestrator au démarrage du scan
+    2. scan.upload_path — pour les archives ZIP extraites
+    3. Fallback reconstruit : PROJECT_ROOT/<scan_id>
+
+    Lève HTTP 422 si aucun chemin valide n'est trouvé.
+    """
+    candidates = [
+        scan.clone_path,
+        scan.upload_path,
+        str(Path(settings.PROJECT_ROOT) / str(scan.id)),
+    ]
+
+    for candidate in candidates:
+        if candidate:
+            path = Path(candidate)
+            if path.is_dir():
+                return path
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=(
+            f"Impossible de localiser les sources du scan {scan.id}. "
+            "Vérifiez que le scan a bien été exécuté et que clone_path est renseigné."
+        ),
+    )
+
+
 def _build_service(scan: Scan, db: Session) -> RemediationService:
-    try:
-        return RemediationService(
-            project_root=Path(scan.project.clone_path),
-            db_session=db,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        ) from exc
+    clone_path = _get_clone_path(scan)
+    return RemediationService(project_root=clone_path, db_session=db)
 
 
-def _build_git_service(clone_path: str) -> GitService:
-    """
-    Instancie GitService avec les credentials issus de config.py / .env.
-
-    Les valeurs GIT_TOKEN, GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL et GIT_TIMEOUT
-    doivent être définies dans le fichier .env (jamais committées en dur).
-    """
+def _build_git_service(scan: Scan) -> GitService:
+    clone_path = _get_clone_path(scan)
     return GitService(
-        repo_path=Path(clone_path),
+        repo_path=clone_path,
         author_name=settings.GIT_AUTHOR_NAME,
         author_email=settings.GIT_AUTHOR_EMAIL,
         timeout=settings.GIT_TIMEOUT,
-        token=settings.GIT_TOKEN,  # injecté dans l'URL remote si non vide
+        token=settings.GIT_TOKEN,
     )
 
 
@@ -150,16 +151,6 @@ def list_fix_proposals(
     scan_id: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
 ) -> FixesListOut:
-    """
-    Retourne les corrections proposées pour toutes les vulnérabilités supportées.
-
-    Premier appel  → génère les SuggestedFix et les persiste en BDD.
-    Appels suivants → charge les enregistrements existants (idempotent).
-
-    Chaque proposition expose son `owasp_category` (ex : "A05 – Injection") et
-    son `fix_type` (ex : "sql_injection") pour permettre le mapping côté frontend.
-    Le `suggested_fix_id` est utilisé par le POST /apply pour valider les corrections.
-    """
     scan = _get_scan_or_404(scan_id, db)
     service = _build_service(scan, db)
 
@@ -196,28 +187,10 @@ def apply_fixes(
     body: ApplyFixesIn,
     db: Annotated[Session, Depends(get_db)],
 ) -> ApplyFixesOut:
-    """
-    Workflow complet en deux étapes :
-
-    **1. Application disque**
-    Modifie les fichiers sources à la ligne exacte indiquée en BDD,
-    uniquement pour les `fix_ids` présents dans le payload (validation explicite).
-    Aucune modification n'est effectuée si la liste est vide — la contrainte
-    `min_length=1` sur `ApplyFixesIn.fix_ids` garantit au moins un ID validé.
-
-    **2. Push Git**
-    - Crée une branche `fix/securescan-<YYYY-MM-DD>` (suffixe numérique si collision).
-    - Commit avec le message normalisé `"SECURESCAN: Automated security fixes applied"`.
-    - Push via `--force-with-lease` sur le remote configuré.
-
-    Si aucun fix ne peut être appliqué, la réponse est retournée immédiatement
-    sans tentative Git. En cas d'échec Git isolé, les fichiers corrigés sur disque
-    restent valides — `git_pushed` indique le statut réel du push.
-    """
     scan = _get_scan_or_404(scan_id, db)
     service = _build_service(scan, db)
 
-    # --- 1. Application des corrections sur disque ---
+    # 1. Application sur disque
     try:
         apply_result: ApplyResult = service.apply_fixes(validated_fix_ids=body.fix_ids)
     except Exception as exc:
@@ -227,7 +200,6 @@ def apply_fixes(
             detail=f"Erreur lors de l'application des corrections : {exc}",
         ) from exc
 
-    # Rien à pousser si toutes les corrections ont été ignorées
     if not apply_result.applied:
         return ApplyFixesOut(
             scan_id=scan_id,
@@ -236,13 +208,13 @@ def apply_fixes(
             errors=apply_result.errors,
         )
 
-    # --- 2. Intégration Git ---
+    # 2. Push Git
     git_branch: str | None = None
     git_commit: str | None = None
     git_pushed: bool = False
 
     try:
-        git_svc = _build_git_service(scan.project.clone_path)
+        git_svc = _build_git_service(scan)
         git_branch = git_svc.create_fix_branch()
         git_commit = git_svc.commit_fixes(message=GIT_COMMIT_MESSAGE)
         git_svc.push_branch(git_branch)
@@ -254,8 +226,6 @@ def apply_fixes(
             git_commit,
         )
     except GitServiceError as exc:
-        # Les fichiers sont corrigés sur disque, seul le push a échoué.
-        # On remonte l'info sans bloquer la réponse HTTP.
         logger.error("GitService échoué — scan %s : %s", scan_id, exc)
 
     return ApplyFixesOut(

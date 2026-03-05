@@ -35,7 +35,9 @@ def _clear_token_cookie(response: Response) -> None:
     )
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 def register(payload: UserCreate, db: Session = Depends(get_db)) -> UserResponse:
     """Inscription : crée un utilisateur. Mot de passe haché (bcrypt), jamais stocké en clair."""
     existing = db.query(User).filter(User.email == payload.email.lower()).first()

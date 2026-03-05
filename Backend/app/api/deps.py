@@ -31,19 +31,23 @@ def get_current_user(
     token = request.cookies.get(settings.JWT_COOKIE_NAME)
     if not token:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="Non authentifié.")
     user_id_str = decode_access_token(token)
     if not user_id_str:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="Token invalide ou expiré.")
     try:
         user_id = UUID(user_id_str)
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="Token invalide.")
     user = db.get(User, user_id)
     if not user:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="Utilisateur introuvable.")
     return user
 

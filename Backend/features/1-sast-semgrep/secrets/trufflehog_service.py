@@ -18,13 +18,13 @@ class TruffleHogService:
     async def run(project_path: str) -> dict:
         """
         Lance TruffleHog et retourne les secrets détectés.
-        
+
         TruffleHog fonctionne mieux sur des repos git. Si le chemin ne contient
         pas un .git, on va initialiser un repo git local temporaire.
-        
+
         Args:
             project_path: Chemin du projet à analyser
-            
+
         Returns:
             Dict avec les résultats parsés
         """
@@ -33,11 +33,11 @@ class TruffleHogService:
 
         try:
             project_path_obj = Path(project_path)
-            
+
             # Initialiser un repo git temporaire si besoin
             git_dir = project_path_obj / ".git"
             needs_cleanup_git = False
-            
+
             if not git_dir.exists():
                 # Initialiser un repo git local
                 try:
@@ -65,7 +65,7 @@ class TruffleHogService:
                         "status": "error",
                         "error": f"Failed to initialize git repo: {str(e)}",
                     }
-            
+
             # Construire la commande TruffleHog
             # TruffleHog 2.x utilise: trufflehog [options] git_url
             # Pour un repo local, on peut passer file:// ou simplement le chemin
@@ -75,7 +75,7 @@ class TruffleHogService:
                     "status": "error",
                     "error": "TruffleHog is not installed. Install with: pip install truffleHog3",
                 }
-            
+
             cmd = [
                 trufflehog_path,
                 "--json",
@@ -90,12 +90,11 @@ class TruffleHogService:
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                
+
                 # Timeout de 60 secondes
                 try:
                     stdout, stderr = await asyncio.wait_for(
-                        process.communicate(),
-                        timeout=60.0
+                        process.communicate(), timeout=60.0
                     )
                 except asyncio.TimeoutError:
                     process.kill()
@@ -128,7 +127,7 @@ class TruffleHogService:
                     "secrets": secrets,
                     "raw_output": {"secrets": secrets},
                 }
-                
+
             except subprocess.TimeoutExpired:
                 return {
                     "status": "error",
@@ -144,6 +143,7 @@ class TruffleHogService:
                 if needs_cleanup_git:
                     try:
                         import shutil
+
                         shutil.rmtree(str(git_dir))
                     except Exception:
                         pass
@@ -163,10 +163,10 @@ class TruffleHogService:
     def parse_vulnerabilities(truffleHog_results: dict) -> list[dict]:
         """
         Convertit les résultats TruffleHog en format vulnérabilité standardisé.
-        
+
         Args:
             truffleHog_results: Résultats bruts de TruffleHog
-            
+
         Returns:
             Liste de vulnérabilités standardisées
         """
@@ -191,7 +191,7 @@ class TruffleHogService:
             #   "matched_type": "Asymmetric Private Key",
             #   ...
             # }
-            
+
             vuln = {
                 "title": f"Secret detected: {secret.get('reason', secret.get('matched_type', 'Unknown'))}",
                 "description": f"Found potential secret - {secret.get('reason', 'Secret detected')}",
@@ -203,21 +203,6 @@ class TruffleHogService:
                 "cwe_id": "CWE-798",  # Hardcoded credentials
                 "tool": "truffleHog",
                 "confidence": "high",
-            }
-            vulnerabilities.append(vuln)
-
-        return vulnerabilities
-
-            vuln = {
-                "title": f"Secret detected: {secret.get('type', 'Unknown')}",
-                "description": f"Found credential of type {secret.get('type', 'Unknown')} in source code",
-                "file_path": secret.get("file_path", ""),
-                "line_start": secret.get("line_number"),
-                "line_end": None,
-                "severity": "critical",  # Les secrets sont toujours critiques
-                "cve_id": None,
-                "cwe_id": "CWE-798",  # Hardcoded credentials
-                "tool": "truffleHog",
             }
             vulnerabilities.append(vuln)
 
