@@ -48,3 +48,26 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# ========================
+# Base de données (Local)
+# ========================
+*.sqlite3
+*.db
+*.db-journal
+
+# ========================
+# Débris de commandes & Logs
+# ========================
+\=*
+pip-log.txt
+
+
+ARCHITECTURE.md
+CHOIX_TECHNIQUES.md
+BASE_DE_DONNEES.md
+MAPPING_OWASP.md
+PRESENTATION_JURY.md
+README.md
+MAPPING.md
+UML-SecureScan.pdf
