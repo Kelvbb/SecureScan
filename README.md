@@ -56,10 +56,6 @@ pip install -r requirements.txt
 
 # Configurer les variables d'environnement
 cp env.example .env
-# Éditer .env avec vos paramètres :
-# - DATABASE_URL=postgresql://user:password@localhost/securescan
-# - SECRET_KEY=<clé-secrète-générée>
-# - GIT_TOKEN=<token-github-optionnel>
 ```
 
 Initialiser la base de données :
@@ -111,8 +107,94 @@ Le frontend sera accessible sur `http://localhost:5173`
 
 ## Documentation technique
 
-Pour plus de détails sur l'architecture, les choix techniques, le schéma de base de données et le mapping OWASP, consulter :
-- `ARCHITECTURE.md` - Schéma d'architecture
-- `CHOIX_TECHNIQUES.md` - Justification des choix techniques
-- `BASE_DE_DONNEES.md` - Schéma MCD/MLD
-- `MAPPING_OWASP.md` - Mapping vers OWASP Top 10 2025
+## Schéma d'architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                       FRONTEND (React)                           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │  Dashboard   │  │  Scan Detail │  │   Results    │            │
+│  └──────────────┘  └──────────────┘  └──────────────┘            │
+│         │                  │                  │                  │
+│         └──────────────────┼──────────────────┘                  │
+│                            │                                     │
+│                    ┌───────▼───────┐                             │
+│                    │  API Client   │                             │
+│                    └───────┬───────┘                             │
+└────────────────────────────┼─────────────────────────────────────┘
+                             │ HTTP/REST
+┌────────────────────────────▼─────────────────────────────────────┐
+│                    BACKEND (FastAPI)                             │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │              API Routes (FastAPI)                        │    │
+│  │  - /api/auth/*      (authentification)                   │    │
+│  │  - /api/scans/*     (gestion des scans)                  │    │
+│  │  - /api/scans/{id}/results  (résultats)                  │    │
+│  │  - /api/scans/{id}/fixes    (corrections)                │    │
+│  └──────────────────────────────────────────────────────────┘    │
+│                            │                                     │
+│         ┌──────────────────┼──────────────────┐                  │
+│         │                  │                  │                  │
+│  ┌──────▼──────┐   ┌───────▼──────┐   ┌───────▼─────┐            │
+│  │  Services   │   │   Models     │   │  Core       │            │
+│  │  - Scan     │   │   (ORM)      │   │  - Auth     │            │
+│  │  - Git      │   │   - User     │   │  - OWASP    │            │
+│  │  - Remed.   │   │   - Scan     │   │  - Score    │            │
+│  └──────┬──────┘   │   - Vuln     │   └─────────────┘            │
+│         │          └───────┬──────┘                              │
+│         │                  │                                     │
+│         └──────────────────┼──────────────────┐                  │
+│                            │                  │                  │
+│                    ┌───────▼───────┐   ┌──────▼──────┐           │ 
+│                    │   PostgreSQL  │   │ Scan        │           │
+│                    │   Database    │   │ Orchestrator│           │
+│                    └───────────────┘   └──────┬──────┘           │
+└────────────────────────────────────────────────┼─────────────────┘
+                                                 │
+┌────────────────────────────────────────────────▼─────────────────┐
+│                  OUTILS DE SÉCURITÉ (CLI)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │   Semgrep    │  │  pip-audit   │  │ TruffleHog   │            │
+│  │   (SAST)     │  │  (deps)      │  │  (secrets)   │            │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘            │
+│         │                 │                 │                    │
+│  ┌──────▼───────┐  ┌──────▼────────┐  ┌─────▼────────┐           │ 
+│  │   Bandit     │  │  npm-audit    │  │   ESLint     │           │
+│  │  (Python)    │  │  (deps)       │  │  (JS/TS)     │           │
+│  └──────────────┘  └───────────────┘  └──────────────┘           │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │         Projet cloné/téléversé (fichiers sources)        │    │
+│  └──────────────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Stratégie de mapping
+
+Le mapping se fait en **2 étapes** :
+
+1. **Mapping par règle** (prioritaire) : Analyse du `rule_id` ou `check_id` de l'outil
+2. **Mapping par sévérité** (fallback) : Si aucun mapping spécifique, utilisation de la sévérité
+
+## Tableau de mapping
+
+| Mots-clés détectés | Catégorie OWASP | Exemples |
+|-------------------|-----------------|----------|
+| `sql`, `injection`, `xss` | **A05 - Injection** | SQL injection, XSS, command injection |
+| `secret`, `password`, `key`, `trufflehog` | **A04 - Cryptographic Failures** | Secrets exposés, mots de passe en clair |
+| `dependency`, `audit`, `cve`, `pip-audit`, `npm-audit` | **A03 - Software Supply Chain Failures** | Dépendances vulnérables (CVE) |
+| `access`, `idor`, `cors` | **A01 - Broken Access Control** | IDOR, CORS mal configuré |
+| `auth`, `session`, `login` | **A07 - Authentication Failures** | Brute force, sessions non invalidées |
+| `config`, `header`, `debug` | **A02 - Security Misconfiguration** | Headers manquants, debug actif |
+| `deserial`, `integrity` | **A08 - Software/Data Integrity Failures** | Désérialisation non sécurisée |
+| `log`, `alert` | **A09 - Logging & Alerting Failures** | Logs absents, pas d'alertes |
+| `exception`, `error`, `stack` | **A10 - Mishandling of Exceptional Conditions** | Erreurs non gérées, stack traces |
+
+## Mapping par sévérité (fallback)
+
+Si aucun mot-clé n'est trouvé dans le `rule_id`, le système utilise la sévérité :
+
+- **Critical / High** → `A05` (Injection)
+- **Medium** → `A02` (Security Misconfiguration)
+- **Low** → `A09` (Logging & Alerting Failures)
+- **Par défaut** → `A06` (Insecure Design)
