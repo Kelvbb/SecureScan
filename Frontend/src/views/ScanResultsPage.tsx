@@ -4,7 +4,6 @@ import { Button } from "../components";
 import {
   getScanResults,
   getScanOwaspSummary,
-  downloadScanReportPdf,
   type ScanResults,
   type VulnerabilityItem,
   type ScanOwaspSummary,
@@ -16,7 +15,6 @@ export function ScanResultsPage() {
   const [results, setResults] = useState<ScanResults | null>(null);
   const [owaspSummary, setOwaspSummary] = useState<ScanOwaspSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reportLoading, setReportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Filtres
@@ -389,33 +387,6 @@ export function ScanResultsPage() {
           </div>
         </section>
       )}
-
-      {/* Actions */}
-      <section style={{ display: "flex", gap: "1rem", marginTop: "2rem", flexWrap: "wrap" }}>
-        <Button 
-          onClick={async () => {
-            if (!scanId) return;
-            setReportLoading(true);
-            try {
-              await downloadScanReportPdf(scanId);
-            } catch (err) {
-              const message = err instanceof Error ? err.message : "Erreur lors du téléchargement du rapport";
-              alert(message);
-            } finally {
-              setReportLoading(false);
-            }
-          }}
-          disabled={reportLoading}
-        >
-          {reportLoading ? "Téléchargement..." : "Télécharger Rapport PDF"}
-        </Button>
-        <Button onClick={() => navigate(`/scans/${scanId}/score`)}>
-          Voir le score
-        </Button>
-        <Button className="btn-secondary" onClick={() => navigate(`/scans/${scanId}`)}>
-          Retour aux détails
-        </Button>
-      </section>
     </div>
   );
 }

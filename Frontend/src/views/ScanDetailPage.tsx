@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "../components";
-import { getScan, getScanProgress, runScan, getScanFiles, type ScanDetail, type ScanProgress, type ScanFiles } from "../api";
+import { getScan, getScanProgress, runScan, getScanFiles, downloadScanReportPdf, type ScanDetail, type ScanProgress, type ScanFiles } from "../api";
 
 export function ScanDetailPage() {
   const { scanId } = useParams<{ scanId: string }>();
@@ -12,6 +12,7 @@ export function ScanDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingScan, setStartingScan] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     if (!scanId) {
@@ -378,6 +379,25 @@ export function ScanDetailPage() {
             <Link to={`/scans/${scanId}/score`}>
               <Button className="btn-secondary" style={{ minWidth: "200px" }}>Voir le score</Button>
             </Link>
+            <Button 
+              onClick={async () => {
+                if (!scanId) return;
+                setReportLoading(true);
+                try {
+                  await downloadScanReportPdf(scanId);
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : "Erreur lors du téléchargement du rapport";
+                  alert(message);
+                } finally {
+                  setReportLoading(false);
+                }
+              }}
+              disabled={reportLoading}
+              className="btn-secondary"
+              style={{ minWidth: "200px" }}
+            >
+              {reportLoading ? "Téléchargement..." : "Télécharger Rapport PDF"}
+            </Button>
           </div>
         </section>
       )}

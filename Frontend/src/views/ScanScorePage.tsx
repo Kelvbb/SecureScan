@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../components";
-import { getScanScore, getScanOwaspSummary, downloadScanReportPdf, type ScanScore, type ScanOwaspSummary } from "../api";
+import { getScanScore, getScanOwaspSummary, type ScanScore, type ScanOwaspSummary } from "../api";
 
 export function ScanScorePage() {
   const { scanId } = useParams<{ scanId: string }>();
@@ -9,7 +9,6 @@ export function ScanScorePage() {
   const [score, setScore] = useState<ScanScore | null>(null);
   const [owaspSummary, setOwaspSummary] = useState<ScanOwaspSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reportLoading, setReportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -256,30 +255,6 @@ export function ScanScorePage() {
           </div>
         </section>
       )}
-
-      {/* Actions */}
-      <section style={{ display: "flex", gap: "1rem", marginTop: "2rem", flexWrap: "wrap" }}>
-        <Button 
-          onClick={async () => {
-            if (!scanId) return;
-            setReportLoading(true);
-            try {
-              await downloadScanReportPdf(scanId);
-            } catch (err) {
-              const message = err instanceof Error ? err.message : "Erreur lors du téléchargement du rapport";
-              alert(message);
-            } finally {
-              setReportLoading(false);
-            }
-          }}
-          disabled={reportLoading}
-        >
-          {reportLoading ? "Téléchargement..." : "Télécharger Rapport PDF"}
-        </Button>
-        <Button onClick={() => navigate(`/scans/${scanId}`)}>
-          Retour
-        </Button>
-      </section>
     </div>
   );
 }
