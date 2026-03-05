@@ -5,7 +5,7 @@
 const API_BASE =
   (import.meta.env.VITE_API_URL as string) || "http://localhost:8000";
 
-type ApiError = { detail: string };
+type ApiError = { detail: string | string[] | unknown };
 
 async function request<T>(
   path: string,
@@ -24,12 +24,19 @@ async function request<T>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const message =
-      typeof (data as ApiError).detail === "string"
-        ? (data as ApiError).detail
-        : Array.isArray((data as { detail?: string[] }).detail)
-          ? (data as { detail: string[] }).detail.join(", ")
-          : "Erreur serveur";
+    let message = "Erreur serveur";
+    
+    // Extraire le message d'erreur de la réponse
+    if (typeof (data as ApiError)?.detail === "string") {
+      message = (data as ApiError).detail;
+    } else if (Array.isArray((data as ApiError)?.detail)) {
+      message = (data as { detail: string[] }).detail.join(", ");
+    } else if (typeof data === "object" && data !== null && "message" in data) {
+      message = (data as any).message;
+    } else if (typeof data === "string") {
+      message = data;
+    }
+    
     throw new Error(message);
   }
 
