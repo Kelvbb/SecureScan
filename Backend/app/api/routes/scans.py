@@ -9,15 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    HTTPException,
-    UploadFile,
-    File,
-    status,
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, status
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -40,6 +33,7 @@ from app.schemas.scan_results import (
 )
 from app.services.scan_orchestrator import ScanOrchestrator
 from app.services.technology_detector import TechnologyDetector
+from app.services.report_generator import ReportGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -728,3 +722,67 @@ def run_scan(
         "status": "running",
         "message": "Analysis started in background",
     }
+
+
+@router.get("/{scan_id}/report/html", response_class=HTMLResponse)
+def get_report_html(
+    scan_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Récupère le rapport de sécurité au format HTML.
+    """
+    scan = _get_scan_or_404(db, scan_id)
+
+    # Vérifier que l'utilisateur est propriétaire
+    if scan.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Générer le rapport
+    try:
+        report_generator = ReportGenerator()
+        html_content = report_generator.generate_html_report(db, scan_id)
+        return html_content
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération du rapport HTML: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur lors de la génération du rapport"
+        )
+
+
+@router.get("/{scan_id}/report/pdf")
+def get_report_pdf(
+    scan_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Récupère le rapport de sécurité au format PDF.
+    """
+    scan = _get_scan_or_404(db, scan_id)
+
+    # Vérifier que l'utilisateur est propriétaire
+    if scan.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Générer le rapport
+    try:
+        report_generator = ReportGenerator()
+        pdf_bytes = report_generator.generate_pdf_report(db, scan_id)
+        
+        pdf_filename = f"securescan_report_{scan_id}.pdf"
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={pdf_filename}"}
+        )
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération du rapport PDF: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la génération du rapport: {str(e)}"
+        )
+

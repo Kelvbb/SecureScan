@@ -12,6 +12,7 @@ export {
   getScanOwaspSummary,
   getScanFiles,
   getScanPreview,
+  downloadScanReportPdf,
   type ScanItem, 
   type ScanDetail,
   type ScanCreatePayload,

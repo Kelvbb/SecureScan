@@ -196,3 +196,26 @@ export type ScanFiles = {
 export async function getScanFiles(scanId: string): Promise<ScanFiles> {
   return request<ScanFiles>(`/api/scans/${scanId}/files`);
 }
+
+export async function downloadScanReportPdf(scanId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/scans/${scanId}/report/pdf`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Erreur lors du téléchargement du rapport" }));
+    throw new Error(error.detail || "Erreur lors du téléchargement du rapport");
+  }
+
+  // Créer un blob et télécharger le fichier
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `securescan_report_${scanId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
